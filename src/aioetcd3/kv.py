@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from typing import Optional, Union
 
 from ._protobuf import DeleteRangeRequest, KVStub, PutRequest, RangeRequest
 
 
 class KVService:
-    """Operações de dados com garantia de serializabilidade estrita [14]."""
+    """Serviço KV com garantias de serializabilidade estrita [6]."""
 
     def __init__(self, channel):
         self._stub = KVStub(channel)

@@ -7,12 +7,11 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
-    """Gerencia canais gRPC assíncronos com failover automático [8]."""
+    """Gerencia canais assíncronos com Round-robin e KeepAlives [9]."""
 
     def __init__(
         self, endpoints: List[str], keepalive_time_ms: int = 10000, keepalive_timeout_ms: int = 5000
     ):
-        # O gRPC v3.4+ requer o prefixo ipv4: para múltiplos alvos [9]
         formatted = [e.replace('localhost', '127.0.0.1') for e in endpoints]
         self.target = f'ipv4:{",".join(formatted)}'
 
@@ -30,7 +29,6 @@ class ConnectionManager:
         cert_key: Optional[bytes] = None,
         cert_chain: Optional[bytes] = None,
     ) -> grpc.aio.Channel:
-        """Cria um canal seguro ou inseguro integrado ao Event Loop [10, 11]."""
         try:
             if ca_cert:
                 credentials = grpc.ssl_channel_credentials(
@@ -39,5 +37,5 @@ class ConnectionManager:
                 return grpc.aio.secure_channel(self.target, credentials, options=self.grpc_options)
             return grpc.aio.insecure_channel(self.target, options=self.grpc_options)
         except Exception as e:
-            logger.error(f'Erro ao inicializar canal: {e}')
+            logger.error(f'Erro ao inicializar canal gRPC: {e}')
             raise

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ._protobuf import (
     LeaseGrantRequest,
     LeaseKeepAliveRequest,
@@ -8,7 +10,7 @@ from ._protobuf import (
 
 
 class LeaseService:
-    """Contratos renováveis para detecção de liveness [2, 16]."""
+    """Gerencia concessões e vivacidade do cliente [7]."""
 
     def __init__(self, channel):
         self._stub = LeaseStub(channel)
@@ -23,7 +25,7 @@ class LeaseService:
         return await self._stub.LeaseTimeToLive(LeaseTimeToLiveRequest(ID=id, keys=keys))
 
     async def keep_alive(self, id: int):
-        """Usa stream bidirecional para renovar a concessão [15]."""
+        """Usa stream bidirecional gRPC para renovar o TTL [8]."""
 
         async def req_gen():
             yield LeaseKeepAliveRequest(ID=id)

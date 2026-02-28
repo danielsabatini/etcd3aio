@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 from typing import AsyncIterator, Optional, Union
 
@@ -5,7 +7,10 @@ from ._protobuf import WatchCreateRequest, WatchRequest, WatchResponse, WatchStu
 
 
 class WatchService:
-    """Notificações de eventos PUT/DELETE via streams [18, 19]."""
+    """
+    Monitora mudanças em chaves ou intervalos de chaves em tempo real.
+    Utiliza streams gRPC bidirecionais conforme o design do etcd v3.
+    """
 
     def __init__(self, channel):
         self._stub = WatchStub(channel)
@@ -16,8 +21,10 @@ class WatchService:
         range_end: Optional[Union[str, bytes]] = None,
         start_revision: int = 0,
         prev_kv: bool = False,
-    ) -> AsyncIterator['WatchResponse']:
-        """Cria um watcher que cede controle ao Event Loop enquanto aguarda [20, 21]."""
+    ) -> AsyncIterator[WatchResponse]:
+        """
+        Cria um watcher. Cede controle ao Event Loop enquanto aguarda notificações [1].
+        """
 
         async def request_generator():
             create_request = WatchCreateRequest(
@@ -27,8 +34,10 @@ class WatchService:
                 prev_kv=prev_kv,
             )
             yield WatchRequest(create_request=create_request)
+
+            # Mantém o stream aberto para receber eventos [2]
             while True:
-                await asyncio.sleep(3600)  # Mantém o stream aberto [22]
+                await asyncio.sleep(3600)
 
         responses = self._stub.Watch(request_generator())
         async for response in responses:
