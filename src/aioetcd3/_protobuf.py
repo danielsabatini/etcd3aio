@@ -34,6 +34,12 @@ RangeResponse: TypeAlias = rpc_pb2.RangeResponse
 DeleteRangeRequest: TypeAlias = rpc_pb2.DeleteRangeRequest
 DeleteRangeResponse: TypeAlias = rpc_pb2.DeleteRangeResponse
 
+Compare: TypeAlias = rpc_pb2.Compare
+RequestOp: TypeAlias = rpc_pb2.RequestOp
+ResponseOp: TypeAlias = rpc_pb2.ResponseOp
+TxnRequest: TypeAlias = rpc_pb2.TxnRequest
+TxnResponse: TypeAlias = rpc_pb2.TxnResponse
+
 LeaseGrantRequest: TypeAlias = rpc_pb2.LeaseGrantRequest
 LeaseGrantResponse: TypeAlias = rpc_pb2.LeaseGrantResponse
 LeaseRevokeRequest: TypeAlias = rpc_pb2.LeaseRevokeRequest
@@ -49,6 +55,7 @@ WatchCancelRequest: TypeAlias = rpc_pb2.WatchCancelRequest
 WatchResponse: TypeAlias = rpc_pb2.WatchResponse
 
 __all__ = [
+    'Compare',
     'DeleteRangeRequest',
     'DeleteRangeResponse',
     'KVStub',
@@ -65,6 +72,10 @@ __all__ = [
     'PutResponse',
     'RangeRequest',
     'RangeResponse',
+    'RequestOp',
+    'ResponseOp',
+    'TxnRequest',
+    'TxnResponse',
     'WatchCancelRequest',
     'WatchCreateRequest',
     'WatchRequest',

@@ -47,6 +47,7 @@ class WatchService(BaseService):
         reconnect_backoff_seconds = self._reconnect_backoff_seconds
 
         while True:
+
             async def request_generator() -> AsyncIterator[WatchRequest]:
                 create_request = WatchCreateRequest(
                     key=key_bytes,
