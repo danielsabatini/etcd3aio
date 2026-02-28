@@ -1,47 +1,26 @@
-Agent Instructions
+# Agent Instructions
 
-This repository implements aioetcd3.
+This repository implements `aioetcd3`.
 
-Guidelines for modifications:
+## Source of Truth
 
-Python 3.13+
+Read `CONTRACT.md` first.
 
-Strict typing required
+## Hard Rules
 
-Use TypeAlias where appropriate
+- Python 3.13+
+- Async-first (do not block event loop)
+- Await gRPC calls when applicable
+- Keep facade pattern
+- Keep client lightweight
+- Isolate gRPC logic in services/connections
+- Use strong typing and `TypeAlias` when helpful
+- Follow Pyright mode configured in `pyproject.toml`
+- `ruff`, `pyright`, and `pytest` must pass
+- Do not modify generated protobuf files
+- Keep backwards compatibility
 
-Do not block asyncio event loop
+## References
 
-Always prefer async APIs
-
-All grpc calls must be awaited
-
-Code quality:
-
-Ruff must pass
-
-Pyright must pass
-
-Design rules:
-
-Keep facade pattern
-
-gRPC logic must stay isolated
-
-Client object must remain lightweight
-
-File modification rules:
-
-Always output full file when modifying
-
-Do not modify protobuf generated files
-
-Maintain backwards compatibility
-
-Documentation references:
-
-etcd API
-https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/
-
-Asyncio
-https://docs.python.org/3/howto/asyncio.html
+- etcd API: https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/
+- asyncio: https://docs.python.org/3/howto/asyncio.html

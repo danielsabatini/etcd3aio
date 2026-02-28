@@ -1,47 +1,49 @@
 # aioetcd3
 
-Native asyncio Python client for etcd v3 built on grpc.aio.
+Async etcd v3 client for Python using `grpc.aio`.
 
-## Goals
+## Principles
 
-- Native async client
-- Strict typing
-- Linearizable operations by default
-- gRPC based (no HTTP gateway)
+- Simple facade API
+- Async-first
+- Strong typing
+- Easy to maintain
 
-## Features
+## Requirements
 
-Current:
+- Python 3.13+
+- etcd v3
 
-- KV API
-- Lease API
-- Watch API
-- Round robin connection manager
+## Quick Start
 
-Planned:
+Start a local etcd cluster:
 
-- Transactions
-- Distributed locks
-- Leader election
-- Authentication
-- Maintenance API
-
-## Quickstart
-
-Start local cluster
-
+```bash
 docker compose up -d
+```
 
-Example
+Basic usage:
 
 ```python
 import asyncio
-from aioetcd3.client import Etcd3Client
 
-async def main():
-    async with Etcd3Client(["localhost:2379"]) as cli:
-        await cli.kv.put("foo", "bar")
-        res = await cli.kv.get("foo")
-        print(res)
+from aioetcd3 import Etcd3Client
 
-asyncio.run(main())
+
+async def main() -> None:
+    async with Etcd3Client(['localhost:2379']) as client:
+        await client.kv.put('foo', 'bar')
+        response = await client.kv.get('foo')
+        print(response.kvs[0].value)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+## Project Docs
+
+- `CONTRACT.md`: non-negotiable project contract
+- `ARCHITECTURE.md`: module boundaries and responsibilities
+- `CONTRIBUTING.md`: local workflow and quality checks
+- `ROADMAP.md`: next features

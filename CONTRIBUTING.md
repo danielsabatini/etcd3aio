@@ -1,25 +1,24 @@
-Development
+# Contributing
 
-Requirements
+## Local Setup
 
-Python 3.13
-uv
-ruff
-pyright
-
-Install
-
+```bash
 uv venv
 uv pip install -e .
+```
 
-Lint
+## Run Quality Checks
 
-ruff check .
+```bash
+.venv/bin/ruff check .
+.venv/bin/pyright
+.venv/bin/pytest
+```
 
-Type checking
+## Rules
 
-pyright
-
-Local etcd cluster
-
-docker compose up -d
+- Follow `CONTRACT.md`.
+- Keep changes small and focused.
+- Do not edit generated protobuf files.
+- Keep public API backward compatible.
+- Add tests for behavior changes.

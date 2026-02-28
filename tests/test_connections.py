@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -6,30 +9,36 @@ from aioetcd3.connections import ConnectionManager
 
 
 @pytest.fixture
-def endpoints():
-    """Retorna endpoints padrão para testes de conexão [2]."""
+def endpoints() -> list[str]:
     return ['localhost:2379', 'localhost:3379', 'localhost:4379']
 
 
 @pytest.mark.asyncio
-async def test_target_formatting(endpoints):
-    """Valida se o target é formatado corretamente com prefixo
-    ipv4 e substituição de localhost [3]."""
+async def test_target_formatting(endpoints: list[str]) -> None:
     manager = ConnectionManager(endpoints)
     assert manager.target == 'ipv4:127.0.0.1:2379,127.0.0.1:3379,127.0.0.1:4379'
 
 
 @pytest.mark.asyncio
-async def test_grpc_options(endpoints):
-    """Verifica se as opções de Round-robin e KeepAlive são injetadas no canal [1, 3]."""
+async def test_grpc_options(endpoints: list[str]) -> None:
     manager = ConnectionManager(endpoints)
-    with patch('grpc.aio.insecure_channel') as mock:
+
+    with patch('grpc.aio.insecure_channel') as insecure_channel_mock:
         await manager.get_channel()
-        _, kwargs = mock.call_args
-        opts = kwargs['options']
 
-        # Valida balanceamento Round-robin exigido pelo design moderno do etcd [4]
-        assert ('grpc.lb_policy_name', 'round_robin') in opts
+    call_args = insecure_channel_mock.call_args
+    assert call_args is not None
 
-        # CORREÇÃO: Linha completa validando a chave do KeepAlive nas tuplas de opções [1]
-        assert any(k == 'grpc.keepalive_time_ms' for k, v in opts)
+    kwargs = cast(dict[str, Any], call_args.kwargs)
+    options = cast(list[tuple[str, object]], kwargs['options'])
+
+    assert ('grpc.lb_policy_name', 'round_robin') in options
+    assert any(key == 'grpc.keepalive_time_ms' for key, _ in options)
+
+
+@pytest.mark.asyncio
+async def test_tls_requires_ca_cert(endpoints: list[str]) -> None:
+    manager = ConnectionManager(endpoints)
+
+    with pytest.raises(ValueError, match='ca_cert is required'):
+        await manager.get_channel(cert_key=b'key')

@@ -1,38 +1,15 @@
-Roadmap
-Phase 1
+# Roadmap
 
-KV API
-Lease API
-Watch API
+## Current
 
-Phase 2
+- KV API
+- Lease API
+- Watch API
+- Connection manager with round-robin
 
-Transactions
+## Next
 
-TxnRequest
-Compare
-Success
-Failure
-
-Phase 3
-
-Concurrency API
-
-Lock
-Election
-
-Phase 4
-
-Authentication
-
-Users
-Roles
-RBAC
-
-Phase 5
-
-Maintenance
-
-Status
-Snapshot
-Alarms
+1. Transactions (Txn/Compare/Success/Failure)
+2. Concurrency primitives (lock, election)
+3. Authentication (users, roles, RBAC)
+4. Maintenance API (status, snapshot, alarms)

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from collections.abc import Sequence
+from types import TracebackType
+
+import grpc.aio
 
 from .connections import ConnectionManager
 from .kv import KVService
@@ -9,28 +12,58 @@ from .watch import WatchService
 
 
 class Etcd3Client:
-    """
-    Interface principal para o cluster etcd v3.
-    Unifica balanceamento, tratamento de erros e stubs de serviço [3].
-    """
+    """High level facade for etcd v3 services."""
 
-    def __init__(self, endpoints: Optional[List[str]] = None, **conn_args):
+    def __init__(
+        self,
+        endpoints: Sequence[str] | None = None,
+        *,
+        rpc_max_attempts: int = 3,
+        watch_reconnect_backoff_seconds: float = 0.25,
+        watch_max_reconnect_backoff_seconds: float = 5.0,
+        **conn_args: bytes | None,
+    ) -> None:
         self._manager = ConnectionManager(endpoints or ['localhost:2379'])
         self._conn_args = conn_args
+        self._rpc_max_attempts = rpc_max_attempts
+        self._watch_reconnect_backoff_seconds = watch_reconnect_backoff_seconds
+        self._watch_max_reconnect_backoff_seconds = watch_max_reconnect_backoff_seconds
+
+        self._channel: grpc.aio.Channel | None = None
+        self.kv: KVService | None = None
+        self.lease: LeaseService | None = None
+        self.watch: WatchService | None = None
+
+    async def connect(self) -> None:
+        """Initializes channel and service facades."""
+        self._channel = await self._manager.get_channel(**self._conn_args)
+        self.kv = KVService(self._channel, max_attempts=self._rpc_max_attempts)
+        self.lease = LeaseService(self._channel, max_attempts=self._rpc_max_attempts)
+        self.watch = WatchService(
+            self._channel,
+            max_attempts=self._rpc_max_attempts,
+            reconnect_backoff_seconds=self._watch_reconnect_backoff_seconds,
+            max_reconnect_backoff_seconds=self._watch_max_reconnect_backoff_seconds,
+        )
+
+    async def close(self) -> None:
+        """Closes the gRPC channel and clears facades."""
+        if self._channel is not None:
+            await self._channel.close()
+
         self._channel = None
-        self.kv: Optional[KVService] = None
-        self.lease: Optional[LeaseService] = None
-        self.watch: Optional[WatchService] = None
+        self.kv = None
+        self.lease = None
+        self.watch = None
 
     async def __aenter__(self) -> Etcd3Client:
-        """Inicializa a conexão e os serviços ao entrar no contexto 'async with' [4]."""
-        self._channel = await self._manager.get_channel(**self._conn_args)
-        self.kv = KVService(self._channel)
-        self.lease = LeaseService(self._channel)
-        self.watch = WatchService(self._channel)
+        await self.connect()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Garante que o canal gRPC seja fechado adequadamente [5]."""
-        if self._channel:
-            await self._channel.close()
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        await self.close()

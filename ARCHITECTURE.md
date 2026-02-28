@@ -1,80 +1,35 @@
-Architecture
+# Architecture
 
-aioetcd3 is a native asynchronous etcd v3 client.
+`aioetcd3` is organized as a thin facade over async gRPC services.
 
-The library follows a facade pattern to isolate gRPC complexity.
+## Modules
 
-Core Principles
+- `client.py`: lifecycle and service wiring (`Etcd3Client`)
+- `connections.py`: channel creation and connection options
+- `base.py`: shared unary RPC retry helper
+- `kv.py`: KV operations (put/get/delete)
+- `lease.py`: lease operations (grant/revoke/keep alive)
+- `watch.py`: watch stream with basic reconnect behavior
+- `_protobuf.py`: protobuf/stub aliases and import bootstrap
+- `errors.py`: library-level exceptions
 
-Python 3.13+
+## Design Boundaries
 
-asyncio native
+- Facade stays small.
+- gRPC internals stay out of user-facing API.
+- Service modules should be cohesive and easy to test.
+- Avoid deep inheritance and complex indirection.
 
-strict typing
+## Request Flow
 
-grpc.aio transport
+1. User calls facade service method.
+2. Service builds protobuf request.
+3. Service executes gRPC call.
+4. Retry helper handles transient unary failures.
+5. Response is returned as protobuf object.
 
-round-robin endpoint balancing
+## Non-Goals (for now)
 
-HTTP/2 keepalive
-
-etcd Guarantees
-
-Default operations are linearizable.
-
-Cluster revision acts as logical clock.
-
-Writes increment the global revision.
-
-Modules
-
-client.py
-
-High level facade that exposes services.
-
-connections.py
-
-Connection manager that builds grpc channels.
-
-Features:
-
-round robin
-
-keepalive
-
-retry support
-
-kv.py
-
-Implements
-
-Put
-Range
-Delete
-
-lease.py
-
-Lease lifecycle management
-
-Grant
-Revoke
-KeepAlive
-
-watch.py
-
-Async iterator interface over Watch API.
-
-_protobuf.py
-
-Loads descriptors and exposes TypeAlias for grpc stubs.
-
-Error handling
-
-Transient gRPC errors must be retried:
-
-Unavailable
-DeadlineExceeded
-
-Event loop rule
-
-No blocking operations allowed.
+- Custom DSLs around etcd operations
+- Heavy plugin/interceptor framework
+- Multiplexed watch manager for large-scale fan-out
