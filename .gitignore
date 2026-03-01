@@ -1,10 +1,9 @@
-### Python ###
-# Byte-compiled / optimized / DLL files
+# =========================
+# Python
+# =========================
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
 
 # Distribution / packaging
@@ -23,22 +22,14 @@ var/
 wheels/
 share/python-wheels/
 *.egg-info/
+src/**/*.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
 
-# Build artifacts in src-layout
-src/**/*.egg-info/
-
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
+# =========================
+# Testes / cobertura
+# =========================
 htmlcov/
 coverage-html/
 .tox/
@@ -46,7 +37,6 @@ coverage-html/
 .coverage
 .coverage.*
 .cache
-nosetests.xml
 coverage.xml
 *.cover
 *.py,cover
@@ -54,80 +44,25 @@ coverage.xml
 .pytest_cache/
 cover/
 
-# Ruff / Linters
+# =========================
+# Linters / type checkers
+# =========================
 .ruff_cache/
 .pyright/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff
-instance/
-.webassets-cache
-
-# Scrapy stuff
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv / Python version
-.python-version
-
-# PEP 582
-__pypackages__/
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder / Rope
-.spyderproject
-.spyproject
-.ropeproject
-
-# mkdocs
-/site
-
-# mypy / pyre / pytype
 .mypy_cache/
 .dmypy.json
 dmypy.json
 .pyre/
 .pytype/
 
-# Cython debug symbols
-cython_debug/
-
-# Poetry / PDM
-poetry.toml
-.pdm.toml
-
-# uv (se não quiser versionar o lock)
-uv.lock
+# =========================
+# Ambientes virtuais
+# =========================
+.env
+.venv
+env/
+venv/
+ENV/
 
 # =========================
 # IDEs e Editores
@@ -144,37 +79,27 @@ uv.lock
 .sonarlint/
 
 # =========================
-# Arquivos de Sistema Operacional
+# Sistema operacional
 # =========================
 .DS_Store
 Thumbs.db
 Desktop.ini
 
 # =========================
-# Backups / Temporários
+# Backups / temporários
 # =========================
 *.bak
 *.swp
 *.swo
+*.log
+temp_proto/
+# dicas.txt
 
 # =========================
-# Dados grandes / locais (não versionar)
+# AI Agents / internal docs (uncomment when ready to stop tracking)
 # =========================
-data/
-datasets/
-*.dump
-*.sqlite
-*.db
-
-# Permitir fixtures de teste versionadas
-!tests/**/*.json
-!tests/**/*.csv
-
-
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-__pycache__/
-  *.cpython-313.pyc
+.claude
+# CLAUDE.md
+# AGENTS.md
+# GEMINI.md
+# CONTRACT.md

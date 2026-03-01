@@ -1,55 +1,230 @@
-export ETCDCTL_ENDPOINTS=http://localhost:2379,http://localhost:3379,http://localhost:4379
-etcdctl endpoint health    
-etcdctl member list
-etcdctl endpoint status -w table
-etcdctl put /app/desired_state '{"replicas": 3, "version": "v1.2"}'
-etcdctl get /app/desired_state 
-docker stop etcd1
-etcdctl --endpoints=http://localhost:3379,http://localhost:4379 endpoint status -w table
-etcdctl --endpoints=http://localhost:3379 put /app/status '{"running": 2, "degraded": true}'
-docker start etcd1
-etcdctl --endpoints=http://localhost:2379 get /app/status
-etcdctl del --prefix /app/
+# etcd3aio
 
+Async Python client for etcd v3 using `grpc.aio`.
 
-# Cria as pastas necessárias
-mkdir -p temp_proto/etcd/api/{etcdserverpb,mvccpb,authpb,versionpb}
-mkdir -p temp_proto/google/api
-mkdir -p temp_proto/protoc-gen-openapiv2/options
+[![CI](https://github.com/dsfreitas/etcd3aio/actions/workflows/ci.yml/badge.svg)](https://github.com/dsfreitas/etcd3aio/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/etcd3aio)](https://pypi.org/project/etcd3aio/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-# Baixa os arquivos do etcd (branch release-3.6)
-curl -sSL https://raw.githubusercontent.com/etcd-io/etcd/release-3.6/api/etcdserverpb/rpc.proto -o temp_proto/etcd/api/etcdserverpb/rpc.proto
-curl -sSL https://raw.githubusercontent.com/etcd-io/etcd/release-3.6/api/mvccpb/kv.proto -o temp_proto/etcd/api/mvccpb/kv.proto
-curl -sSL https://raw.githubusercontent.com/etcd-io/etcd/release-3.6/api/authpb/auth.proto -o temp_proto/etcd/api/authpb/auth.proto
-curl -sSL https://raw.githubusercontent.com/etcd-io/etcd/release-3.6/api/versionpb/version.proto -o temp_proto/etcd/api/versionpb/version.proto
+## Features
 
-# Baixa os arquivos do Google API
-curl -sSL https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/annotations.proto -o temp_proto/google/api/annotations.proto
-curl -sSL https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/http.proto -o temp_proto/google/api/http.proto
+- Thin facade over the etcd v3 gRPC API — no hidden magic
+- Async-first: all I/O via `grpc.aio`, never blocks the event loop
+- Strong typing: fully annotated, `py.typed` marker, satisfies `pyright`
+- Automatic retry with exponential backoff for transient errors
+- Watch streams with automatic reconnection
+- Distributed lock and leader election primitives
+- Background lease keep-alive and token refresh context managers
 
-# Baixa os arquivos do grpc-gateway / openapiv2
-curl -sSL https://raw.githubusercontent.com/grpc-ecosystem/grpc-gateway/main/protoc-gen-openapiv2/options/annotations.proto -o temp_proto/protoc-gen-openapiv2/options/annotations.proto
-curl -sSL https://raw.githubusercontent.com/grpc-ecosystem/grpc-gateway/main/protoc-gen-openapiv2/options/openapiv2.proto -o temp_proto/protoc-gen-openapiv2/options/openapiv2.proto
+## Requirements
 
-echo "Todos os arquivos foram baixados com sucesso!"
+- Python 3.11+
+- etcd v3.5+ (see [Local cluster](#local-cluster-docker) to run one locally)
 
-mkdir -p ./src/aioetcd3/proto
+## Installation
 
-python -m grpc_tools.protoc \
-    -I ./temp_proto \
-    --python_out=./src/aioetcd3/proto \
-    --grpc_python_out=./src/aioetcd3/proto \
-    ./temp_proto/etcd/api/etcdserverpb/rpc.proto \
-    ./temp_proto/etcd/api/mvccpb/kv.proto \
-    ./temp_proto/etcd/api/authpb/auth.proto
+```bash
+pip install etcd3aio
+```
 
+## Quick Start
 
-find docker src tests -type f \( -name "*.py" -o -name "*.yaml" -o -name "*.toml" \) \
-  -not -path "*/__pycache__/*" \
-  -not -path "*/.egg-info/*" \
-  -not -path "*/.pytest_cache/*" \
-  | sort \
-  | while read f; do 
-      echo "\n================ FILE: $f ================"
-      cat "$f"
-    done | pbcopy
+```python
+import asyncio
+from etcd3aio import Etcd3Client, EtcdConnectionError
+
+async def main() -> None:
+    try:
+        async with Etcd3Client(['localhost:2379']) as client:
+            await client.ping()
+
+            # Key-value
+            await client.kv.put('myapp/greeting', 'hello')
+            resp = await client.kv.get('myapp/greeting')
+            print(resp.kvs[0].value.decode())  # hello
+
+            # Distributed lock
+            async with client.lock('myapp/resource'):
+                print('acquired exclusive section')
+
+            # Leader election
+            async with client.election('myapp/leader', value=b'node-1') as e:
+                leader = await e.leader()
+                print(f'leader: {leader.kvs[0].value.decode()}')
+    except EtcdConnectionError:
+        print('could not connect to etcd')
+        raise SystemExit(1)
+
+asyncio.run(main())
+```
+
+## Modules
+
+### KVService — `client.kv`
+
+Key-value operations: put, get, delete, compact, and atomic transactions.
+
+```python
+# Prefix scan with sorting
+from etcd3aio.kv import SortOrder, SortTarget, prefix_range_end
+
+resp = await client.kv.get(
+    'myapp/',
+    range_end=prefix_range_end('myapp/'),
+    sort_order=SortOrder.DESCEND,
+    sort_target=SortTarget.KEY,
+)
+
+# Compare-and-swap (atomic transaction)
+resp = await client.kv.txn(
+    compare=[client.kv.txn_compare_value('myapp/flag', 'off')],
+    success=[client.kv.txn_op_put('myapp/flag', 'on')],
+    failure=[client.kv.txn_op_get('myapp/flag')],
+)
+```
+
+### LeaseService — `client.lease`
+
+Lease lifecycle management with optional background keep-alive.
+
+```python
+# Grant a lease and attach a key to it
+lease = await client.lease.grant(ttl=30)
+await client.kv.put('myapp/lock', 'held', lease=lease.ID)
+
+# Automatic renewal in the background
+async with client.lease.keep_alive_context(lease.ID, ttl=30):
+    await do_long_work()  # lease is renewed automatically
+
+# Revoke when done
+await client.lease.revoke(lease.ID)
+```
+
+### WatchService — `client.watch`
+
+Async iterator over etcd events with automatic reconnection and server-side filtering.
+
+```python
+from etcd3aio.watch import WatchFilter
+from etcd3aio.kv import prefix_range_end
+
+# Watch a single key
+async for response in client.watch.watch('myapp/flag'):
+    for event in response.events:
+        print(event.type, event.kv.value.decode())
+
+# Watch a prefix, suppress DELETE events
+async for response in client.watch.watch(
+    'myapp/',
+    range_end=prefix_range_end('myapp/'),
+    filters=(WatchFilter.NODELETE,),
+):
+    ...
+```
+
+### Lock — `client.lock()`
+
+Distributed mutex built on KV + Lease. Guarantees mutual exclusion across processes.
+
+```python
+async with client.lock('myapp/resource', ttl=10):
+    # Only one holder at a time across the entire cluster
+    await do_exclusive_work()
+```
+
+### Election — `client.election()`
+
+Leader election built on KV + Lease. Supports campaign, resign, observe, proclaim, and leader query.
+
+```python
+async with client.election('myapp/leader', value=b'node-1', ttl=10) as e:
+    # This node is the leader
+    leader = await e.leader()
+    print(leader.kvs[0].value.decode())   # b'node-1'
+    await e.proclaim(b'node-1-updated')   # update published value
+
+# Stream leadership changes (useful for followers)
+async for response in client.election('myapp/leader').observe():
+    print('new leader event', response.events)
+```
+
+### AuthService — `client.auth`
+
+Developer-facing authentication: check auth status, obtain tokens, and auto-refresh.
+
+```python
+# Check if auth is enabled
+status = await client.auth.auth_status()
+
+# Authenticate and set token manually
+resp = await client.auth.authenticate('user', 'password')
+client.set_token(resp.token)
+
+# Or use the background refresher
+async with client.token_refresher('user', 'password'):
+    await client.kv.put('secure/key', 'value')
+```
+
+### MaintenanceService — `client.maintenance`
+
+Cluster health and alarm management.
+
+```python
+from etcd3aio.maintenance import AlarmType
+
+status = await client.maintenance.status()
+print(f'leader={status.leader}, version={status.version}')
+
+alarms = await client.maintenance.alarms()
+await client.maintenance.alarm_deactivate(AlarmType.NOSPACE)
+```
+
+### Multi-endpoint & TLS
+
+Pass multiple endpoints for automatic round-robin load balancing. For TLS, supply the certificate bytes directly to the client constructor:
+
+```python
+from pathlib import Path
+
+async with Etcd3Client(
+    ['etcd-node1:2379', 'etcd-node2:2379', 'etcd-node3:2379'],
+    ca_cert=Path('ca.crt').read_bytes(),
+    cert_key=Path('client.key').read_bytes(),    # mutual TLS (optional)
+    cert_chain=Path('client.crt').read_bytes(),  # mutual TLS (optional)
+) as client:
+    await client.ping()
+```
+
+## Local cluster (Docker)
+
+```bash
+docker compose -f docker/docker-compose.yaml up -d
+```
+
+This starts a 3-node etcd cluster on ports 2379, 3379, and 4379.
+
+## Examples
+
+The [`examples/`](examples/) directory contains standalone scripts for every module:
+
+| Script | Covers |
+|---|---|
+| `get_started_example.py` | most common use cases |
+| `client_example.py` | client lifecycle, manual connect/close, `ping()` |
+| `connections_example.py` | `ConnectionManager`, endpoint health check, cluster smoke test |
+| `kv_example.py` | put, get, delete, prefix scan, sort, compact |
+| `lease_example.py` | grant, revoke, keep-alive, TTL |
+| `watch_example.py` | basic watch, filters, prefix range |
+| `txn_example.py` | compare-and-swap, atomic ops |
+| `concurrency_example.py` | distributed lock, leader election |
+| `auth_example.py` | auth status, token management |
+| `maintenance_example.py` | cluster status, alarms |
+| `full_example.py` | integrated end-to-end demo |
+
+## Documentation
+
+- [CONTRIBUTING.md](CONTRIBUTING.md) — local workflow, design principles and quality checks
+- [ARCHITECTURE.md](ARCHITECTURE.md) — module boundaries and responsibilities
+- [CHANGELOG.md](CHANGELOG.md) — version history
+- [ROADMAP.md](ROADMAP.md) — implemented and deferred features
