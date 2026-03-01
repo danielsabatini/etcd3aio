@@ -41,7 +41,7 @@ class AuthService(BaseService):
         """
         request = AuthStatusRequest()
         return await self._rpc(
-            self._stub.AuthStatus, request, operation='Auth.AuthStatus', timeout=timeout
+            self._stub.AuthStatus, request, operation='Auth.Status', timeout=timeout
         )
 
     async def authenticate(

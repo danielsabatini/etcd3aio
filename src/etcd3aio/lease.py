@@ -110,13 +110,13 @@ class LeaseService(BaseService):
     ) -> LeaseGrantResponse:
         request = LeaseGrantRequest(TTL=ttl, ID=lease_id)
         return await self._rpc(
-            self._stub.LeaseGrant, request, operation='Lease.LeaseGrant', timeout=timeout
+            self._stub.LeaseGrant, request, operation='Lease.Grant', timeout=timeout
         )
 
     async def revoke(self, lease_id: int, *, timeout: float | None = None) -> LeaseRevokeResponse:
         request = LeaseRevokeRequest(ID=lease_id)
         return await self._rpc(
-            self._stub.LeaseRevoke, request, operation='Lease.LeaseRevoke', timeout=timeout
+            self._stub.LeaseRevoke, request, operation='Lease.Revoke', timeout=timeout
         )
 
     async def time_to_live(
@@ -126,7 +126,7 @@ class LeaseService(BaseService):
         return await self._rpc(
             self._stub.LeaseTimeToLive,
             request,
-            operation='Lease.LeaseTimeToLive',
+            operation='Lease.TimeToLive',
             timeout=timeout,
         )
 
@@ -135,7 +135,7 @@ class LeaseService(BaseService):
         return await self._rpc(
             self._stub.LeaseLeases,
             LeaseLeasesRequest(),
-            operation='Lease.LeaseLeases',
+            operation='Lease.Leases',
             timeout=timeout,
         )
 
