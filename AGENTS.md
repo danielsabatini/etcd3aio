@@ -32,3 +32,4 @@ Read `CONTRIBUTING.md` first.
 - etcd features: https://etcd.io/docs/v3.6/dev-guide/features/
 - API reference: https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/
 - API reference — concurrency: https://etcd.io/docs/v3.6/dev-guide/api_concurrency_reference_v3/
+- Configuring Logging for a Library: https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library

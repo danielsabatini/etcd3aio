@@ -73,3 +73,13 @@ Before merging, confirm:
   - Avoid unnecessary complexity, excessive mocks, or external dependencies unless essential.
   - Be independently executable.
 - Each example must prioritise clarity and didactic value, allowing users to quickly understand how to use the module or feature.
+
+## 9. Logging
+
+Follows the [Python logging HOWTO for libraries](https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library):
+
+- The library never configures handlers, formatters, or log levels — that is the application's responsibility.
+- `__init__.py` attaches a `NullHandler` to the root package logger.
+- Each module that logs uses `logging.getLogger(__name__)`.
+- All log calls use `%`-style lazy formatting (never f-strings or `.format()`).
+- Examples (application code) must call `logging.basicConfig()` so library output is visible.

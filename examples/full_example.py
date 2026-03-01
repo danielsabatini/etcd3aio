@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import AsyncGenerator, Sequence
 from typing import cast
 
@@ -10,6 +11,8 @@ from etcd3aio.kv import KVService
 from etcd3aio.lease import LeaseService
 from etcd3aio.maintenance import MaintenanceService
 from etcd3aio.watch import WatchService
+
+logging.basicConfig(level=logging.WARNING, format='%(levelname)s:%(name)s: %(message)s')
 
 
 async def _wait_for_watch_event(

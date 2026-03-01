@@ -46,6 +46,19 @@ Before opening a pull request, confirm:
 - [ ] All quality checks are green (`ruff`, `pyright`, `pytest`)
 - [ ] Relevant `.md` files updated (module tables, ROADMAP status, CHANGELOG)
 
+## Logging
+
+This library follows the [Python logging HOWTO for libraries](https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library):
+
+- Each module that emits log records must declare `_log = logging.getLogger(__name__)`.
+- `src/etcd3aio/__init__.py` attaches a `NullHandler` to the root package logger — no other handler, formatter, or level is ever set by the library.
+- All log calls must use `%`-style lazy formatting: `_log.warning('msg %s', value)`, never f-strings or `.format()`.
+- Level guidelines: `WARNING` for recoverable background failures (keepalive, reconnect, token refresh); `ERROR` for unrecoverable background failures.
+- Examples are application code and must configure logging so library output is visible to users:
+  ```python
+  logging.basicConfig(level=logging.WARNING, format='%(levelname)s:%(name)s: %(message)s')
+  ```
+
 ## Examples
 
 Each module has a dedicated `examples/<module>_example.py`. When adding or changing public API:

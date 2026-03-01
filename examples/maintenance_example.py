@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import logging
 
 from etcd3aio.client import Etcd3Client
 from etcd3aio.maintenance import AlarmType, MaintenanceService
+
+logging.basicConfig(level=logging.WARNING, format='%(levelname)s:%(name)s: %(message)s')
 
 
 def parse_args() -> argparse.Namespace:

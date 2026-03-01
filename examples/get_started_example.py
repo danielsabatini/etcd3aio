@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 
 from etcd3aio import Etcd3Client, EtcdConnectionError
 from etcd3aio.kv import prefix_range_end
+
+logging.basicConfig(level=logging.WARNING, format='%(levelname)s:%(name)s: %(message)s')
 
 
 async def main() -> None:

@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import logging
 
 from etcd3aio.auth import AuthService
 from etcd3aio.client import Etcd3Client
 from etcd3aio.errors import EtcdUnauthenticatedError
+
+logging.basicConfig(level=logging.WARNING, format='%(levelname)s:%(name)s: %(message)s')
 
 
 def parse_args() -> argparse.Namespace:
