@@ -1,75 +1,74 @@
 # Roadmap
 
-Referência: [API etcd v3.6](https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/)
+Reference: [etcd v3.6 API](https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/)
 
-## Implementado
+## Implemented
 
-### Serviço KV
-- `Range` → `kv.get()` — com `limit`, `sort_order` / `sort_target` (`SortOrder`, `SortTarget`), `keys_only`, `count_only`
+### KV Service
+- `Range` → `kv.get()` — with `limit`, `sort_order` / `sort_target` (`SortOrder`, `SortTarget`), `keys_only`, `count_only`
 - `Put` → `kv.put()`
 - `DeleteRange` → `kv.delete()`
 - `Compact` → `kv.compact()`
-- `Txn` → `kv.txn()` + helpers de comparação/operação
-- `prefix_range_end()` — helper para construir o limite superior exclusivo para varreduras de prefixo
+- `Txn` → `kv.txn()` + compare/operation helpers
+- `prefix_range_end()` — helper to build the exclusive upper bound for prefix scans
 
-### Serviço Lease
+### Lease Service
 - `LeaseGrant` → `lease.grant()`
 - `LeaseRevoke` → `lease.revoke()`
 - `LeaseTimeToLive` → `lease.time_to_live()`
-- `LeaseKeepAlive` → `lease.keep_alive()` (stream bruto) / `lease.keep_alive_context()` (tarefa em segundo plano)
+- `LeaseKeepAlive` → `lease.keep_alive()` (raw stream) / `lease.keep_alive_context()` (background task)
 - `LeaseLeases` → `lease.leases()`
 
-### Serviço Watch
-- `Watch` → `watch.watch()` — com `filters` (`WatchFilter`) e `progress_notify`
+### Watch Service
+- `Watch` → `watch.watch()` — with `filters` (`WatchFilter`) and `progress_notify`
 
-### Serviço Maintenance
+### Maintenance Service
 - `Status` → `maintenance.status()`
 - `Alarm` (GET) → `maintenance.alarms()`
 - `Alarm` (DEACTIVATE) → `maintenance.alarm_deactivate()`
 
-### Primitivos de Concorrência
-- `Lock` → `client.lock()` — lock distribuído
-- `Election` → `client.election()` — eleição de líder
+### Concurrency Primitives
+- `Lock` → `client.lock()` — distributed lock
+- `Election` → `client.election()` — leader election
   - Campaign / Resign — `async with client.election(...)`
-  - Proclaim — `election.proclaim(value)` — líder atualiza o valor publicado
-  - Leader — `election.leader()` — consulta quem é o líder atual
-  - Observe — `election.observe()` — stream de mudanças de liderança (eventos PUT)
-- `txn_compare_create_revision()` — idioma canônico para "chave não existe" (`create_revision == 0`)
+  - Proclaim — `election.proclaim(value)` — leader updates its published value
+  - Leader — `election.leader()` — query the current leader
+  - Observe — `election.observe()` — stream of leadership changes (PUT events)
+- `txn_compare_create_revision()` — canonical "key does not exist" idiom (`create_revision == 0`)
 
-### Serviço Auth (voltado ao desenvolvedor)
-- `AuthStatus` → `auth.auth_status()` — verifica se a autenticação está habilitada no cluster
-- `Authenticate` → `auth.authenticate()` — obtém um token para um par usuário/senha
+### Auth Service (developer-facing)
+- `AuthStatus` → `auth.auth_status()` — checks whether authentication is enabled on the cluster
+- `Authenticate` → `auth.authenticate()` — obtains a token for a username/password pair
 
-### Cliente
-- Gerenciador de conexão com balanceamento de carga round-robin
-- Retry com backoff exponencial (`BaseService._rpc`)
-- Timeout por chamada: `timeout: float | None = None` em todos os métodos de serviço (`asyncio.timeout()`)
-- `client.ping()` — verificação de conectividade e quórum de escrita
-- Mapeamento de erros de autenticação: `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError`
-- `client.set_token()` / parâmetro `token=` no construtor — propaga o token de autenticação para todos os serviços como metadata do gRPC
-- `client.token_refresher(name, password)` / `TokenRefresher` — gerenciador de contexto em segundo plano que re-autentica antes do token expirar
+### Client
+- Connection manager with round-robin load balancing
+- Retry with exponential backoff (`BaseService._rpc`)
+- Per-call timeout: `timeout: float | None = None` on all service methods (`asyncio.timeout()`)
+- `client.ping()` — connectivity and write-quorum check
+- Auth error mapping: `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError`
+- `client.set_token()` / `token=` constructor parameter — propagates the auth token to all services as gRPC metadata
+- `client.token_refresher(name, password)` / `TokenRefresher` — background context manager that re-authenticates before the token expires
 
 ---
 
-## Admin (adiado)
+## Admin (deferred)
 
-> Operações para administradores de cluster, não para desenvolvedores de aplicações.
+> Operations for cluster administrators, not application developers.
 
+### Cluster Service
+- `MemberList` — list all members with their peer/client URLs
+- `MemberAdd` / `MemberRemove` / `MemberUpdate` — member management
+- `MemberPromote` — promote a learner to voting member
 
-### Serviço Cluster
-- `MemberList` — lista todos os membros com suas URLs de peer/client
-- `MemberAdd` / `MemberRemove` / `MemberUpdate` — gerenciamento de membros
-- `MemberPromote` — promove um learner a membro votante
-
-### Serviço Auth (admin)
-- `AuthEnable` / `AuthDisable` — habilitar/desabilitar autenticação
-- Gerenciamento de usuários: `UserAdd`, `UserGet`, `UserList`, `UserDelete`, `UserChangePassword`
-- Gerenciamento de roles: `RoleAdd`, `RoleGet`, `RoleList`, `RoleDelete`
+### Auth Service (admin)
+- `AuthEnable` / `AuthDisable` — enable/disable authentication
+- User management: `UserAdd`, `UserGet`, `UserList`, `UserDelete`, `UserChangePassword`
+- Role management: `RoleAdd`, `RoleGet`, `RoleList`, `RoleDelete`
 - RBAC: `UserGrantRole`, `UserRevokeRole`, `RoleGrantPermission`, `RoleRevokePermission`
 
-### Maintenance (pesado para admin)
-- `Defragment` — recuperar espaço de armazenamento do backend
-- `Snapshot` — transmitir um backup completo do banco de dados backend
-- `MoveLeader` — transferir liderança para outro membro
-- `Hash` / `HashKV` — checksum para verificação de integridade de dados
-- `Downgrade` — gerenciar downgrade de versão do cluster
+### Maintenance (heavy admin)
+- `Defragment` — reclaim storage space from the backend
+- `Snapshot` — stream a full backup of the backend database
+- `MoveLeader` — transfer leadership to another member
+- `Hash` / `HashKV` — checksum for data integrity verification
+- `Downgrade` — manage cluster version downgrade

@@ -1,76 +1,75 @@
-# Contrato do Projeto
+# Project Contract
 
-Este contrato define as regras obrigatórias para o `etcd3aio`.
+This contract defines the mandatory rules for `etcd3aio`.
 
-## 1. Contrato de Produto
+## 1. Product Contract
 
-- Manter o código simples de usar.
-- Manter o código simples de fazer manutenção.
-- Manter o padrão de fachada: `Etcd3Client` expõe os serviços.
-- Manter compatibilidade retroativa nas APIs públicas, salvo planejamento explícito.
-- Preferir mudanças aditivas a mudanças que quebram compatibilidade.
+- Keep the code simple to use.
+- Keep the code simple to maintain.
+- Maintain the facade pattern: `Etcd3Client` exposes the services.
+- Maintain backward compatibility on public APIs, except when explicitly planned.
+- Prefer additive changes over breaking ones.
 
-## 2. Contrato de Execução
+## 2. Execution Contract
 
-- Apenas Python 3.13+.
-- Nunca bloquear o loop de eventos do asyncio.
-- Preferir APIs assíncronas de ponta a ponta.
-- Toda chamada gRPC deve ser aguardada com `await` quando aplicável.
+- Python 3.13+ only.
+- Never block the asyncio event loop.
+- Prefer async APIs end-to-end.
+- All gRPC calls must be awaited with `await` where applicable.
 
-## 3. Contrato de Código
+## 3. Code Contract
 
-- Utilizar uma codificação simples, mas modernar.
-- Manter os detalhes do gRPC isolados nas camadas de serviço/conexão.
-- Manter o `Etcd3Client` leve (apenas fiação e ciclo de vida).
-- Usar tipagem forte e explícita.
-- O `pyproject.toml` define o modo Pyright aplicado.
-- Usar `TypeAlias` quando melhorar a legibilidade.
-- Não modificar os arquivos protobuf gerados em `src/etcd3aio/proto/`.
+- Use simple but modern coding style.
+- Keep gRPC details isolated inside the service/connection layers.
+- Keep `Etcd3Client` lightweight (only wiring and lifecycle).
+- Use strong, explicit typing.
+- `pyproject.toml` defines the enforced Pyright mode.
+- Use `TypeAlias` where it improves readability.
+- Do not modify generated protobuf files under `src/etcd3aio/proto/`.
 
-## 4. Contrato de Confiabilidade
+## 4. Reliability Contract
 
-- Tratar falhas transitórias do gRPC de forma previsível.
-- Manter as retentativas simples e centralizadas.
-- Garantir que canais e streams sejam fechados/cancelados corretamente.
+- Handle transient gRPC failures predictably.
+- Keep retries simple and centralised.
+- Ensure channels and streams are properly closed/cancelled.
 
-## 5. Contrato de Qualidade
+## 5. Quality Contract
 
-- `ruff format .` deve passar (formata o código automaticamente).
-- `ruff check --fix .` deve passar (linting).
-- `pyright` deve passar.
-- `pytest` deve passar.
-- Novos comportamentos devem incluir testes focados.
+- `ruff format .` must pass (auto-formats code).
+- `ruff check --fix .` must pass (linting).
+- `pyright` must pass.
+- `pytest` must pass.
+- New behaviours must include focused tests.
 
-## 6. Contrato de Documentação
+## 6. Documentation Contract
 
-- Manter a documentação curta e atualizada.
-- Evitar orientações duplicadas entre arquivos.
-- Preferir uma única fonte de verdade para as regras (este arquivo).
+- Keep documentation short and up to date.
+- Avoid duplicating guidance across files.
+- Prefer a single source of truth for rules (`CONTRIBUTING.md`).
 
-## 7. Checklist de Mudanças
+## 7. Change Checklist
 
-Antes do merge, confirmar:
+Before merging, confirm:
 
-- A API permaneceu simples.
-- Nenhuma abstração desnecessária foi introduzida.
-- O comportamento assíncrono foi preservado.
-- Tipagem e testes foram atualizados.
-- As verificações de qualidade estão verdes.
-- Todos os arquivos `.md` foram revisados para consistência: tabelas de módulos, status do ROADMAP e referências cruzadas correspondem à implementação atual.
+- The API remained simple.
+- No unnecessary abstractions were introduced.
+- Async behaviour was preserved.
+- Typing and tests were updated.
+- Quality checks are green.
+- All `.md` files were reviewed for consistency: module tables, ROADMAP status and cross-references match the current implementation.
 
-## 8. Diretrizes para Exemplos da Biblioteca
+## 8. Library Examples Guidelines
 
-- Todos os exemplos devem ser armazenados no diretório examples/.
-- Para cada módulo da biblioteca, deve existir um exemplo dedicado seguindo o padrão de nome: <module>_example.py
-    - Esse arquivo deve demonstrar as funcionalidades principais do módulo de forma direta e objetiva.
-- Deve existir um exemplo completo chamado: full_example.py
-    - Este exemplo deve demonstrar o uso integrado da biblioteca, cobrindo o fluxo completo de utilização entre os diferentes módulos.
-- Deve existir também um exemplo introdutório chamado: 
-get_started_example.py
-    - Este arquivo deve conter os casos de uso mais comuns da biblioteca, servindo como ponto inicial para novos usuários.
-- Os exemplos devem:
-    - Cobrir todas as funcionalidades públicas relevantes de cada módulo.
-    - Demonstrar o uso da API da forma mais simples e direta possível.
-    - Evitar complexidade desnecessária, mocks excessivos ou dependências externas quando não forem essenciais.
-    - Ser executáveis de forma independente.
-- Cada exemplo deve priorizar clareza e valor didático, permitindo que o usuário compreenda rapidamente como utilizar o módulo ou funcionalidade.
+- All examples must be stored in the `examples/` directory.
+- For each library module, a dedicated example must exist following the naming pattern: `<module>_example.py`
+  - It must demonstrate the module's main features directly and objectively.
+- A complete integrated example must exist: `full_example.py`
+  - It must demonstrate integrated library usage covering the full workflow across different modules.
+- An introductory example must also exist: `get_started_example.py`
+  - It must contain the most common use cases, serving as the entry point for new users.
+- Examples must:
+  - Cover all relevant public features of each module.
+  - Demonstrate API usage in the simplest and most direct way possible.
+  - Avoid unnecessary complexity, excessive mocks, or external dependencies unless essential.
+  - Be independently executable.
+- Each example must prioritise clarity and didactic value, allowing users to quickly understand how to use the module or feature.

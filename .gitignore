@@ -96,6 +96,10 @@ temp_proto/
 dicas.txt
 
 # =========================
-# AI Agents
+# AI Agents / internal docs (uncomment when ready to stop tracking)
 # =========================
 .claude
+# CLAUDE.md
+# AGENTS.md
+# GEMINI.md
+# CONTRACT.md

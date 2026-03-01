@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **etcd3aio** is an async Python client for etcd v3 using `grpc.aio`. It strictly follows the **facade pattern** — a thin, well-typed wrapper over generated gRPC stubs with centralized retry logic.
 
-Non-negotiable rules are in [CONTRACT.md](CONTRACT.md). Architectural boundaries are in [ARCHITECTURE.md](ARCHITECTURE.md).
+Design principles and rules are in [CONTRIBUTING.md](CONTRIBUTING.md). Architectural boundaries are in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Development Setup
 
