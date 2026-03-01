@@ -7,6 +7,7 @@ import pytest
 from etcd3aio.client import Etcd3Client
 from etcd3aio.concurrency import Election, Lock
 from etcd3aio.errors import EtcdError
+from etcd3aio.kv import SortOrder, SortTarget
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -225,3 +226,110 @@ def test_client_election_raises_when_not_connected() -> None:
     client = Etcd3Client(['localhost:2379'])
     with pytest.raises(RuntimeError, match='not connected'):
         client.election('x')
+
+
+# ---------------------------------------------------------------------------
+# Election.leader()
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_election_leader_queries_prefix_sorted_by_create_revision() -> None:
+    prefix = b'__etcd3aio:election/myelect/'
+    prefix_end = b'__etcd3aio:election/myelect0'
+    leader_kv = _make_kv(prefix + b'0000000000000001', 1)
+    leader_resp = _make_range_resp([leader_kv], revision=10)
+
+    kv, lease, watch = _make_services(lease_id=99, get_side_effect=leader_resp)
+
+    election = Election(kv, lease, watch, 'myelect', ttl=10)
+    result = await election.leader()
+
+    kv.get.assert_awaited_once_with(
+        prefix,
+        range_end=prefix_end,
+        sort_order=SortOrder.ASCEND,
+        sort_target=SortTarget.CREATE,
+        limit=1,
+        timeout=None,
+    )
+    assert result is leader_resp
+
+
+@pytest.mark.asyncio
+async def test_election_leader_returns_empty_kvs_when_no_leader() -> None:
+    empty_resp = _make_range_resp([], revision=1)
+    kv, lease, watch = _make_services(lease_id=99, get_side_effect=empty_resp)
+
+    election = Election(kv, lease, watch, 'myelect', ttl=10)
+    result = await election.leader()
+
+    assert result.kvs == []
+
+
+# ---------------------------------------------------------------------------
+# Election.proclaim()
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_election_proclaim_updates_leader_key_value() -> None:
+    lease_id = 7
+    prefix = b'__etcd3aio:election/leader/'
+    my_key = prefix + b'0000000000000007'
+
+    kv, lease, watch = _make_services(lease_id=lease_id, get_side_effect=_make_range_resp([], 0))
+
+    election = Election(kv, lease, watch, 'leader', value=b'node-1', ttl=10)
+    election._my_key = my_key
+    election._lease_id = lease_id
+
+    await election.proclaim(b'node-1-v2')
+
+    kv.put.assert_awaited_once_with(my_key, b'node-1-v2', lease=lease_id, timeout=None)
+    assert election._value == b'node-1-v2'
+
+
+@pytest.mark.asyncio
+async def test_election_proclaim_raises_when_not_holding_election() -> None:
+    kv, lease, watch = _make_services(lease_id=1, get_side_effect=_make_range_resp([], 0))
+    election = Election(kv, lease, watch, 'leader', ttl=10)
+
+    with pytest.raises(RuntimeError, match='not holding the election'):
+        await election.proclaim(b'value')
+
+
+# ---------------------------------------------------------------------------
+# Election.observe()
+# ---------------------------------------------------------------------------
+
+
+def _make_put_event(key: bytes) -> MagicMock:
+    event = MagicMock()
+    event.type = 0  # PUT
+    event.kv = MagicMock()
+    event.kv.key = key
+    return event
+
+
+@pytest.mark.asyncio
+async def test_election_observe_yields_only_put_responses() -> None:
+    prefix = b'__etcd3aio:election/myelect/'
+    prefix_end = b'__etcd3aio:election/myelect0'
+    leader_key = prefix + b'0000000000000001'
+
+    put_resp = _make_watch_resp([_make_put_event(leader_key)])
+    delete_resp = _make_watch_resp([_make_delete_event(leader_key)])
+    progress_resp = _make_watch_resp([])  # progress notify — no events
+
+    kv, lease, watch = _make_services(
+        lease_id=99,
+        get_side_effect=_make_range_resp([], 0),
+        watch_responses=[put_resp, delete_resp, progress_resp],
+    )
+
+    election = Election(kv, lease, watch, 'myelect', ttl=10)
+    results = [r async for r in election.observe()]
+
+    assert results == [put_resp]
+    watch.watch.assert_called_once_with(prefix, range_end=prefix_end)

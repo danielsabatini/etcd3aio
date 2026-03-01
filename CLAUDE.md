@@ -49,11 +49,11 @@ docker compose -f docker/docker-compose.yaml up -d
 | `client.py` | `Etcd3Client` — facade, lifecycle, wires services; `ping()`, `token_refresher()`, `lock()`, `election()` factory methods |
 | `connections.py` | `ConnectionManager` — channel creation, TLS, round-robin load balancing; `localhost` is auto-resolved to `127.0.0.1` |
 | `base.py` | `BaseService` — shared retry/backoff for unary RPC; `set_token()` for gRPC metadata |
-| `kv.py` | `KVService` — put/get/delete/compact/txn; `SortOrder`, `SortTarget` enums; `prefix_range_end()` helper |
+| `kv.py` | `KVService` — put/get/delete/compact/txn; `SortOrder`, `SortTarget` enums; `prefix_range_end()`; `txn_compare_create_revision()` for "key doesn't exist" idiom |
 | `lease.py` | `LeaseService` — grant/revoke/leases/keep_alive; `LeaseKeepalive` background context manager |
 | `maintenance.py` | `MaintenanceService` — status/alarms/alarm_deactivate; `AlarmType` enum |
 | `auth.py` | `AuthService` — auth_status/authenticate; `TokenRefresher` background context manager for token refresh |
-| `concurrency.py` | `Lock`, `Election` — distributed lock and leader election built on KV + Lease |
+| `concurrency.py` | `Lock`, `Election` — distributed lock and leader election built on KV + Lease; `Election` exposes `leader()`, `proclaim()`, `observe()` beyond Campaign/Resign |
 | `watch.py` | `WatchService` — async iterator with automatic reconnection; `WatchFilter` enum |
 | `errors.py` | `EtcdError`, `EtcdConnectionError`, `EtcdTransientError`, `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError` |
 | `_protobuf.py` | Centralizes all protobuf imports and TypeAlias definitions |

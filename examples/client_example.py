@@ -27,7 +27,15 @@ async def main() -> None:
         if client.kv is None or client.lease is None or client.watch is None:
             raise RuntimeError('client services are not initialized')
 
-        print('Client connected and services initialized: kv, lease, watch')
+        print('Client connected and services initialized: kv, lease, watch, auth, maintenance')
+
+        # Ping verifies cluster health: readable and writable
+        await client.ping()
+        print('Client ping -> cluster is reachable and accepting writes')
+
+        # Read-only ping (skips the write check)
+        await client.ping(write_check=False)
+        print('Client ping(write_check=False) -> cluster is readable')
     finally:
         await client.close()
         print('Client closed')

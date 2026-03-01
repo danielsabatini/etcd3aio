@@ -22,6 +22,7 @@ Leia o `CONTRACT.md` primeiro.
 
 ## Referências
 - asyncio: https://docs.python.org/3/howto/asyncio.html
+- A Conceptual Overview of asyncio¶: https://docs.python.org/3/library/asyncio-task.html#conceptual-overview
 - Protocolo de descoberta: https://etcd.io/docs/v3.6/dev-guide/discovery_protocol/
 - Configurar um cluster local: https://etcd.io/docs/v3.6/dev-guide/local_cluster/
 - Interagindo com o etcd: https://etcd.io/docs/v3.6/dev-guide/interacting_v3/

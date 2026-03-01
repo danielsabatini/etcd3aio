@@ -23,16 +23,35 @@ def parse_args() -> argparse.Namespace:
 async def run_lease_example(kv: KVService, lease: LeaseService, ttl: int) -> None:
     key = 'example:lease:module'
 
+    # Grant a lease and attach a key to it
     lease_response = await lease.grant(ttl=ttl)
     lease_id = lease_response.ID
     print(f'Lease grant -> lease_id={lease_id}, requested_ttl={ttl}')
 
     await kv.put(key, 'leased-value', lease=lease_id)
-    ttl_response = await lease.time_to_live(lease_id)
-    print(f'Lease ttl -> current_ttl={ttl_response.TTL}, granted_ttl={ttl_response.grantedTTL}')
 
+    # Time to live — pass keys=True to include attached key names
+    ttl_response = await lease.time_to_live(lease_id, keys=True)
+    attached = [k.decode() for k in ttl_response.keys]
+    print(
+        f'Lease ttl -> current_ttl={ttl_response.TTL}, '
+        f'granted_ttl={ttl_response.grantedTTL}, keys={attached}'
+    )
+
+    # List all active leases in the cluster
+    leases_response = await lease.leases()
+    lease_ids = [lr.ID for lr in leases_response.leases]
+    print(f'Lease leases() -> active ids={lease_ids}')
+
+    # Background keep-alive context manager
+    async with lease.keep_alive_context(lease_id, ttl) as ka:
+        print(f'keep_alive_context -> running, alive={ka.alive}')
+        await asyncio.sleep(0.1)  # keepalive loop is active during this block
+
+    print('keep_alive_context -> stopped')
+
+    # Revoke the lease (also removes the attached key)
     await lease.revoke(lease_id)
-    await kv.delete(key)
     print('Lease revoke -> ok')
 
 

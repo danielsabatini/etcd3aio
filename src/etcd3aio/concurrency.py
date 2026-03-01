@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import contextlib
+from collections.abc import AsyncIterator
 from types import TracebackType
 
+from ._protobuf import PutResponse, RangeResponse, WatchResponse
 from .errors import EtcdError
-from .kv import KVService, prefix_range_end
+from .kv import KVService, SortOrder, SortTarget, prefix_range_end
 from .lease import LeaseService
 from .watch import WatchService
 
@@ -12,6 +14,7 @@ _LOCK_PREFIX = '__etcd3aio:lock'
 _ELECTION_PREFIX = '__etcd3aio:election'
 
 # mvccpb.Event.EventType: PUT=0, DELETE=1
+_EVENT_PUT = 0
 _EVENT_DELETE = 1
 
 
@@ -149,6 +152,50 @@ class Election(_Semaphore):
     ) -> None:
         prefix = f'{_ELECTION_PREFIX}/{name}/'.encode()
         super().__init__(kv, lease, watch, prefix, value, ttl)
+
+    async def leader(self, *, timeout: float | None = None) -> RangeResponse:
+        """Return the current leader's KV entry.
+
+        The response ``.kvs`` list contains the leader's key-value if a leader
+        exists, or is empty if no candidate has won the election yet.
+        ``response.kvs[0].value`` is the value the leader posted on campaign.
+        """
+        return await self._kv.get(
+            self._prefix,
+            range_end=self._prefix_end,
+            sort_order=SortOrder.ASCEND,
+            sort_target=SortTarget.CREATE,
+            limit=1,
+            timeout=timeout,
+        )
+
+    async def proclaim(self, value: bytes, *, timeout: float | None = None) -> PutResponse:
+        """Update the value posted by this leader.
+
+        Must be called while holding the election (inside the ``async with`` block).
+        Raises ``RuntimeError`` if the election has not been acquired.
+
+        Args:
+            value: New bytes value to store under the leader key.
+        """
+        if self._my_key is None or self._lease_id is None:
+            raise RuntimeError('not holding the election; call proclaim() inside the async context')
+        self._value = value
+        return await self._kv.put(self._my_key, value, lease=self._lease_id, timeout=timeout)
+
+    async def observe(self) -> AsyncIterator[WatchResponse]:
+        """Stream watch responses whenever a new leader is elected.
+
+        Yields a :class:`WatchResponse` for each server response that contains
+        at least one PUT event on the election prefix — i.e. every time a new
+        leader is crowned.  DELETE events (leader resigned) are filtered out.
+
+        The stream reconnects automatically on transient errors (same behaviour
+        as :meth:`WatchService.watch`).
+        """
+        async for response in self._watch.watch(self._prefix, range_end=self._prefix_end):
+            if any(e.type == _EVENT_PUT for e in response.events):
+                yield response
 
     async def __aenter__(self) -> Election:
         await self._acquire()

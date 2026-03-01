@@ -11,7 +11,7 @@ O `etcd3aio` é organizado como uma fachada fina sobre serviços gRPC assíncron
 - `lease.py`: operações de lease (grant/revoke/time_to_live/keep_alive/leases); gerenciador de contexto assíncrono `LeaseKeepalive` para keepalive em segundo plano
 - `auth.py`: autenticação voltada ao desenvolvedor — `auth_status()` / `authenticate()`; gerenciador de contexto assíncrono `TokenRefresher` para renovação automática de token
 - `maintenance.py`: status do cluster e gerenciamento de alarmes; enum `AlarmType`
-- `concurrency.py`: lock distribuído (`Lock`) e eleição de líder (`Election`) construídos sobre KV + Lease
+- `concurrency.py`: lock distribuído (`Lock`) e eleição de líder (`Election`) construídos sobre KV + Lease; `Election` expõe `leader()`, `proclaim()` e `observe()` além do ciclo Campaign/Resign
 - `watch.py`: stream de watch com reconexão automática e rastreamento de revisão; enum `WatchFilter` para filtragem de eventos no servidor
 - `_protobuf.py`: aliases de protobuf/stub e bootstrap de importação
 - `errors.py`: exceções da biblioteca (`EtcdError`, `EtcdConnectionError`, `EtcdTransientError`, `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError`)

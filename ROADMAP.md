@@ -30,6 +30,11 @@ Referência: [API etcd v3.6](https://etcd.io/docs/v3.6/dev-guide/api_reference_v
 ### Primitivos de Concorrência
 - `Lock` → `client.lock()` — lock distribuído
 - `Election` → `client.election()` — eleição de líder
+  - Campaign / Resign — `async with client.election(...)`
+  - Proclaim — `election.proclaim(value)` — líder atualiza o valor publicado
+  - Leader — `election.leader()` — consulta quem é o líder atual
+  - Observe — `election.observe()` — stream de mudanças de liderança (eventos PUT)
+- `txn_compare_create_revision()` — idioma canônico para "chave não existe" (`create_revision == 0`)
 
 ### Serviço Auth (voltado ao desenvolvedor)
 - `AuthStatus` → `auth.auth_status()` — verifica se a autenticação está habilitada no cluster

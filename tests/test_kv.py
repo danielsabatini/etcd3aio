@@ -186,6 +186,27 @@ def test_txn_helper_builders() -> None:
     assert delete_op.request_delete_range.prev_kv is True
 
 
+def test_txn_compare_create_revision_key_does_not_exist() -> None:
+    """create_revision == 0 is the canonical etcd idiom for 'key does not exist'."""
+    cmp = KVService.txn_compare_create_revision('new-key', 0)
+
+    assert cmp.target == Compare.CREATE
+    assert cmp.result == Compare.EQUAL
+    assert cmp.key == b'new-key'
+    assert cmp.create_revision == 0
+
+
+def test_txn_compare_create_revision_with_result_and_range_end() -> None:
+    cmp = KVService.txn_compare_create_revision(
+        'prefix/', 5, result=Compare.GREATER, range_end='prefix0'
+    )
+
+    assert cmp.target == Compare.CREATE
+    assert cmp.result == Compare.GREATER
+    assert cmp.create_revision == 5
+    assert cmp.range_end == b'prefix0'
+
+
 @pytest.mark.asyncio
 async def test_compact_calls_stub_with_revision() -> None:
     stub = _build_kv_stub()

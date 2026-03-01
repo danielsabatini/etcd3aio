@@ -218,6 +218,34 @@ class KVService(BaseService):
         return compare
 
     @classmethod
+    def txn_compare_create_revision(
+        cls,
+        key: BytesLike,
+        create_revision: int,
+        *,
+        result: int = Compare.EQUAL,
+        range_end: BytesLike | None = None,
+    ) -> Compare:
+        """Compare the create_revision of a key.
+
+        The canonical etcd idiom for "key does not exist yet" is::
+
+            KVService.txn_compare_create_revision('my-key', 0)
+
+        which evaluates to True only if ``my-key`` has never been created
+        (``create_revision == 0``).
+        """
+        compare = Compare(
+            result=result,
+            target=Compare.CREATE,
+            key=cls._to_bytes(key),
+            create_revision=create_revision,
+        )
+        if range_end is not None:
+            compare.range_end = cls._to_bytes(range_end)
+        return compare
+
+    @classmethod
     def txn_op_put(
         cls,
         key: BytesLike,
