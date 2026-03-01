@@ -58,7 +58,7 @@ class WatchService(BaseService):
                 yield WatchRequest(create_request=create_request)
                 await asyncio.Future()
 
-            stream = self._stub.Watch(request_generator())
+            stream = self._stub.Watch(request_generator(), metadata=self._metadata or None)  # type: ignore[call-arg]
 
             try:
                 async for response in stream:

@@ -10,7 +10,24 @@ from aioetcd3._protobuf import (
     LeaseRevokeResponse,
     LeaseTimeToLiveResponse,
 )
-from aioetcd3.lease import LeaseService
+from aioetcd3.lease import LeaseKeepalive, LeaseService
+
+
+class _FakeStream:
+    """Async iterable mock with a cancel() shim, mimicking a gRPC streaming call."""
+
+    def __init__(self, *responses: object) -> None:
+        self._iter = iter(responses)
+        self.cancel = MagicMock()
+
+    def __aiter__(self) -> _FakeStream:
+        return self
+
+    async def __anext__(self) -> object:
+        try:
+            return next(self._iter)
+        except StopIteration:
+            raise StopAsyncIteration
 
 
 @pytest.mark.asyncio
@@ -86,3 +103,65 @@ async def test_leases_returns_all_active_leases() -> None:
 
     assert response is leases_response
     stub.LeaseLeases.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# LeaseKeepalive
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_keep_alive_context_lifecycle() -> None:
+    """Context manager starts a background task and cancels it cleanly on exit."""
+    stub = MagicMock()
+    # LeaseKeepAlive won't be reached because the task sleeps first
+    stub.LeaseKeepAlive = MagicMock()
+
+    ka = LeaseKeepalive(stub, lease_id=42, ttl=30)
+
+    async with ka:
+        assert ka.alive is True
+        assert ka._task is not None
+        assert not ka._task.done()
+
+    # After __aexit__: task cancelled and awaited, reference cleared
+    assert ka._task is None
+    assert ka.alive is True  # Not expired, just cancelled
+
+
+@pytest.mark.asyncio
+async def test_keep_alive_context_marks_alive_false_when_lease_expires() -> None:
+    """When the server reports TTL=0, alive becomes False."""
+    stream = _FakeStream(MagicMock(TTL=0))
+    stub = MagicMock()
+    stub.LeaseKeepAlive = MagicMock(return_value=stream)
+
+    with patch('asyncio.sleep', new=AsyncMock()):
+        ka = LeaseKeepalive(stub, lease_id=99, ttl=3)
+        await ka._run()
+
+    assert ka.alive is False
+    stream.cancel.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_keep_alive_context_adjusts_interval_from_server_ttl() -> None:
+    """Interval for each subsequent sleep is derived from the server-reported TTL."""
+    # First stream: TTL=15 → next interval = max(1, 15//3) = 5
+    # Second stream: TTL=0  → alive=False, stop
+    stream1 = _FakeStream(MagicMock(TTL=15))
+    stream2 = _FakeStream(MagicMock(TTL=0))
+    stub = MagicMock()
+    stub.LeaseKeepAlive = MagicMock(side_effect=[stream1, stream2])
+
+    sleep_calls: list[float] = []
+
+    async def _fake_sleep(secs: float) -> None:
+        sleep_calls.append(secs)
+
+    with patch('asyncio.sleep', new=_fake_sleep):
+        ka = LeaseKeepalive(stub, lease_id=99, ttl=9)  # initial interval = max(1, 9//3) = 3
+        await ka._run()
+
+    assert sleep_calls == [3, 5]  # 9//3=3, then 15//3=5
+    assert ka.alive is False

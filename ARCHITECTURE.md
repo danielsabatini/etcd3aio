@@ -6,9 +6,9 @@
 
 - `client.py`: lifecycle and service wiring (`Etcd3Client`); `lock()` / `election()` factories
 - `connections.py`: channel creation and connection options
-- `base.py`: shared unary RPC retry helper; maps `UNAUTHENTICATED` → `EtcdUnauthenticatedError`, `PERMISSION_DENIED` → `EtcdPermissionDeniedError`
+- `base.py`: shared unary RPC retry helper; maps `UNAUTHENTICATED` → `EtcdUnauthenticatedError`, `PERMISSION_DENIED` → `EtcdPermissionDeniedError`; `set_token()` injects auth token as gRPC metadata on all calls
 - `kv.py`: KV operations (put/get/delete/compact/txn)
-- `lease.py`: lease operations (grant/revoke/time_to_live/keep_alive/leases)
+- `lease.py`: lease operations (grant/revoke/time_to_live/keep_alive/leases); `LeaseKeepalive` async context manager for background keepalive
 - `auth.py`: developer-facing auth — `auth_status()` / `authenticate()`
 - `maintenance.py`: cluster status and alarm management
 - `concurrency.py`: distributed lock (`Lock`) and leader election (`Election`) built on KV + Lease

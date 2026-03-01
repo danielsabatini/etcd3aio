@@ -154,3 +154,60 @@ async def test_ping_raises_when_not_connected() -> None:
     client = Etcd3Client(['localhost:2379'])
     with pytest.raises(RuntimeError, match='not connected'):
         await client.ping()
+
+
+# ---------------------------------------------------------------------------
+# Token injection
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_token_param_applies_to_all_services_on_connect() -> None:
+    """token= passed to constructor is propagated to all services after connect."""
+    auth_service = MagicMock()
+    kv_service = MagicMock()
+    lease_service = MagicMock()
+    maintenance_service = MagicMock()
+    watch_service = MagicMock()
+
+    with (
+        patch(
+            'aioetcd3.client.ConnectionManager.get_channel', new=AsyncMock(return_value=AsyncMock())
+        ),
+        patch('aioetcd3.client.AuthService', return_value=auth_service),
+        patch('aioetcd3.client.KVService', return_value=kv_service),
+        patch('aioetcd3.client.LeaseService', return_value=lease_service),
+        patch('aioetcd3.client.MaintenanceService', return_value=maintenance_service),
+        patch('aioetcd3.client.WatchService', return_value=watch_service),
+    ):
+        async with Etcd3Client(['localhost:2379'], token='my-token'):
+            pass
+
+    for svc in (auth_service, kv_service, lease_service, maintenance_service, watch_service):
+        svc.set_token.assert_called_once_with('my-token')
+
+
+@pytest.mark.asyncio
+async def test_set_token_propagates_to_all_active_services() -> None:
+    """set_token() after connect() calls set_token() on every service."""
+    auth_service = MagicMock()
+    kv_service = MagicMock()
+    lease_service = MagicMock()
+    maintenance_service = MagicMock()
+    watch_service = MagicMock()
+
+    with (
+        patch(
+            'aioetcd3.client.ConnectionManager.get_channel', new=AsyncMock(return_value=AsyncMock())
+        ),
+        patch('aioetcd3.client.AuthService', return_value=auth_service),
+        patch('aioetcd3.client.KVService', return_value=kv_service),
+        patch('aioetcd3.client.LeaseService', return_value=lease_service),
+        patch('aioetcd3.client.MaintenanceService', return_value=maintenance_service),
+        patch('aioetcd3.client.WatchService', return_value=watch_service),
+    ):
+        async with Etcd3Client(['localhost:2379']) as client:
+            client.set_token('runtime-token')
+
+    for svc in (auth_service, kv_service, lease_service, maintenance_service, watch_service):
+        svc.set_token.assert_called_with('runtime-token')

@@ -48,9 +48,9 @@ docker compose -f docker/docker-compose.yaml up -d
 |---|---|
 | `client.py` | `Etcd3Client` — facade, lifecycle, wires services together |
 | `connections.py` | Channel creation, TLS, round-robin load balancing |
-| `base.py` | `BaseService` — shared unary RPC retry/backoff logic |
+| `base.py` | `BaseService` — shared unary RPC retry/backoff logic; `set_token()` for gRPC metadata |
 | `kv.py` | `KVService` — put/get/delete/compact/txn operations |
-| `lease.py` | `LeaseService` — grant/revoke/leases/keep_alive |
+| `lease.py` | `LeaseService` — grant/revoke/leases/keep_alive; `LeaseKeepalive` background context manager |
 | `maintenance.py` | `MaintenanceService` — status/alarms/alarm_deactivate; `AlarmType` enum |
 | `auth.py` | `AuthService` — auth_status/authenticate for developer-facing auth |
 | `concurrency.py` | `Lock`, `Election` — distributed lock and leader election built on KV + Lease |

@@ -9,6 +9,7 @@ from .errors import (
     EtcdTransientError,
     EtcdUnauthenticatedError,
 )
+from .lease import LeaseKeepalive
 from .maintenance import AlarmType
 
 __all__ = [
@@ -20,5 +21,6 @@ __all__ = [
     'EtcdPermissionDeniedError',
     'EtcdTransientError',
     'EtcdUnauthenticatedError',
+    'LeaseKeepalive',
     'Lock',
 ]

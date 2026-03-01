@@ -25,6 +25,7 @@ class Etcd3Client:
         self,
         endpoints: Sequence[str] | None = None,
         *,
+        token: str | None = None,
         rpc_max_attempts: int = 3,
         watch_reconnect_backoff_seconds: float = 0.25,
         watch_max_reconnect_backoff_seconds: float = 5.0,
@@ -32,6 +33,7 @@ class Etcd3Client:
     ) -> None:
         self._manager = ConnectionManager(endpoints or ['localhost:2379'])
         self._conn_args = conn_args
+        self._token = token
         self._rpc_max_attempts = rpc_max_attempts
         self._watch_reconnect_backoff_seconds = watch_reconnect_backoff_seconds
         self._watch_max_reconnect_backoff_seconds = watch_max_reconnect_backoff_seconds
@@ -56,6 +58,21 @@ class Etcd3Client:
             reconnect_backoff_seconds=self._watch_reconnect_backoff_seconds,
             max_reconnect_backoff_seconds=self._watch_max_reconnect_backoff_seconds,
         )
+        if self._token:
+            self.set_token(self._token)
+
+    def set_token(self, token: str | None) -> None:
+        """Apply *token* as gRPC metadata on all subsequent calls across every service.
+
+        Call this after ``auth.authenticate()`` to enable authenticated requests::
+
+            resp = await client.auth.authenticate('alice', 'secret')
+            client.set_token(resp.token)
+        """
+        self._token = token
+        for svc in (self.auth, self.kv, self.lease, self.maintenance, self.watch):
+            if svc is not None:
+                svc.set_token(token)
 
     async def close(self) -> None:
         """Closes the gRPC channel and clears facades."""

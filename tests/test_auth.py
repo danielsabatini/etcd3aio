@@ -142,3 +142,41 @@ async def test_missing_token_on_kv_raises_unauthenticated() -> None:
         service = KVService(channel=MagicMock())
         with pytest.raises(EtcdUnauthenticatedError, match='invalid auth token'):
             await service.get('key')
+
+
+# ---------------------------------------------------------------------------
+# Token injection via set_token()
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_set_token_injects_metadata_into_rpc_call() -> None:
+    """After set_token(), every gRPC call carries the token in metadata."""
+    response = AuthStatusResponse(enabled=True)
+    stub = MagicMock()
+    stub.AuthStatus = AsyncMock(return_value=response)
+
+    with patch('aioetcd3.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        service.set_token('my-token')
+        await service.auth_status()
+
+    metadata = stub.AuthStatus.await_args.kwargs.get('metadata')
+    assert metadata == (('token', 'my-token'),)
+
+
+@pytest.mark.asyncio
+async def test_set_token_none_clears_metadata() -> None:
+    response = AuthStatusResponse(enabled=True)
+    stub = MagicMock()
+    stub.AuthStatus = AsyncMock(return_value=response)
+
+    with patch('aioetcd3.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        service.set_token('my-token')
+        service.set_token(None)
+        await service.auth_status()
+
+    # metadata=None when empty tuple is falsy
+    metadata = stub.AuthStatus.await_args.kwargs.get('metadata')
+    assert metadata is None

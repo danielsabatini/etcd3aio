@@ -22,6 +22,10 @@ TRANSIENT_CODES: TransientCodes = (
     grpc.StatusCode.DEADLINE_EXCEEDED,
 )
 
+# gRPC metadata type: sequence of (key, value) string pairs.
+# Used to inject auth tokens into every outgoing call.
+_Metadata: TypeAlias = tuple[tuple[str, str], ...]
+
 
 class BaseService:
     """Shared RPC helpers for unary etcd calls."""
@@ -43,6 +47,11 @@ class BaseService:
         self._max_attempts = max_attempts
         self._initial_backoff_seconds = initial_backoff_seconds
         self._max_backoff_seconds = max_backoff_seconds
+        self._metadata: _Metadata = ()
+
+    def set_token(self, token: str | None) -> None:
+        """Set the auth token sent as gRPC metadata on every subsequent call."""
+        self._metadata = (('token', token),) if token else ()
 
     @staticmethod
     def _is_transient_error(exc: grpc.aio.AioRpcError) -> bool:
@@ -59,7 +68,7 @@ class BaseService:
 
         for attempt in range(1, self._max_attempts + 1):
             try:
-                return await call(request)
+                return await call(request, metadata=self._metadata or None)  # type: ignore[call-arg]
             except grpc.aio.AioRpcError as exc:
                 is_last_attempt = attempt == self._max_attempts
                 if not self._is_transient_error(exc) or is_last_attempt:

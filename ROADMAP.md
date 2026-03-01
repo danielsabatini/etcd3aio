@@ -15,7 +15,7 @@ Reference: [etcd v3.6 API](https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/
 - `LeaseGrant` → `lease.grant()`
 - `LeaseRevoke` → `lease.revoke()`
 - `LeaseTimeToLive` → `lease.time_to_live()`
-- `LeaseKeepAlive` → `lease.keep_alive()`
+- `LeaseKeepAlive` → `lease.keep_alive()` (raw stream) / `lease.keep_alive_context()` (background task)
 - `LeaseLeases` → `lease.leases()`
 
 ### Watch Service
@@ -30,25 +30,27 @@ Reference: [etcd v3.6 API](https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/
 - `Lock` → `client.lock()` — distributed lock
 - `Election` → `client.election()` — leader election
 
+### Auth Service (developer-facing)
+- `AuthStatus` → `auth.auth_status()` — check if auth is enabled on the cluster
+- `Authenticate` → `auth.authenticate()` — obtain a token for a user/password pair
+
 ### Client
 - Connection manager with round-robin load balancing
 - Retry with exponential backoff (`BaseService._rpc`)
 - `client.ping()` — connectivity and write quorum check
 - Auth error mapping: `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError`
+- `client.set_token()` / `token=` constructor param — propagates auth token to all services as gRPC metadata
 
 ---
 
-## Next
-
-### Auth Service (developer-facing)
-- `AuthStatus` → `auth.auth_status()` — check if auth is enabled on the cluster
-- `Authenticate` → `auth.authenticate()` — obtain a token for a user/password pair
+## Admin (deferred)
 
 ---
 
 ## Admin (deferred)
 
 > Operations for cluster operators, not application developers.
+
 
 ### Cluster Service
 - `MemberList` — list all members with their peer/client URLs
