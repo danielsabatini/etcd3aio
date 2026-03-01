@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from aioetcd3.connections import ConnectionManager
+from etcd3aio.connections import ConnectionManager
 
 
 @pytest.fixture

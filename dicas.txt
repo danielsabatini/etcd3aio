@@ -33,12 +33,12 @@ curl -sSL https://raw.githubusercontent.com/grpc-ecosystem/grpc-gateway/main/pro
 
 echo "Todos os arquivos foram baixados com sucesso!"
 
-mkdir -p ./src/aioetcd3/proto
+mkdir -p ./src/etcd3aio/proto
 
 python -m grpc_tools.protoc \
     -I ./temp_proto \
-    --python_out=./src/aioetcd3/proto \
-    --grpc_python_out=./src/aioetcd3/proto \
+    --python_out=./src/etcd3aio/proto \
+    --grpc_python_out=./src/etcd3aio/proto \
     ./temp_proto/etcd/api/etcdserverpb/rpc.proto \
     ./temp_proto/etcd/api/mvccpb/kv.proto \
     ./temp_proto/etcd/api/authpb/auth.proto

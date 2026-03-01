@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .auth import TokenRefresher
 from .client import Etcd3Client
 from .concurrency import Election, Lock
 from .errors import (
@@ -9,8 +10,10 @@ from .errors import (
     EtcdTransientError,
     EtcdUnauthenticatedError,
 )
+from .kv import SortOrder, SortTarget, prefix_range_end
 from .lease import LeaseKeepalive
 from .maintenance import AlarmType
+from .watch import WatchFilter
 
 __all__ = [
     'AlarmType',
@@ -23,4 +26,9 @@ __all__ = [
     'EtcdUnauthenticatedError',
     'LeaseKeepalive',
     'Lock',
+    'SortOrder',
+    'SortTarget',
+    'TokenRefresher',
+    'WatchFilter',
+    'prefix_range_end',
 ]

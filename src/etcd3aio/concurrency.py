@@ -4,26 +4,15 @@ import contextlib
 from types import TracebackType
 
 from .errors import EtcdError
-from .kv import KVService
+from .kv import KVService, prefix_range_end
 from .lease import LeaseService
 from .watch import WatchService
 
-_LOCK_PREFIX = '__aioetcd3:lock'
-_ELECTION_PREFIX = '__aioetcd3:election'
+_LOCK_PREFIX = '__etcd3aio:lock'
+_ELECTION_PREFIX = '__etcd3aio:election'
 
 # mvccpb.Event.EventType: PUT=0, DELETE=1
 _EVENT_DELETE = 1
-_BYTE_MAX = 0xFF
-
-
-def _prefix_range_end(prefix: bytes) -> bytes:
-    """Compute the exclusive range_end for a lexicographic prefix scan."""
-    b = bytearray(prefix)
-    for i in range(len(b) - 1, -1, -1):
-        if b[i] < _BYTE_MAX:
-            b[i] += 1
-            return bytes(b[: i + 1])
-    return b'\x00'
 
 
 class _Semaphore:
@@ -50,7 +39,7 @@ class _Semaphore:
         self._lease = lease
         self._watch = watch
         self._prefix = prefix
-        self._prefix_end = _prefix_range_end(prefix)
+        self._prefix_end = prefix_range_end(prefix)
         self._value = value
         self._ttl = ttl
         self._my_key: bytes | None = None

@@ -105,26 +105,38 @@ class LeaseService(BaseService):
         super().__init__(max_attempts=max_attempts)
         self._stub = LeaseStub(channel)
 
-    async def grant(self, ttl: int, lease_id: int = 0) -> LeaseGrantResponse:
+    async def grant(
+        self, ttl: int, lease_id: int = 0, *, timeout: float | None = None
+    ) -> LeaseGrantResponse:
         request = LeaseGrantRequest(TTL=ttl, ID=lease_id)
-        return await self._rpc(self._stub.LeaseGrant, request, operation='Lease.LeaseGrant')
+        return await self._rpc(
+            self._stub.LeaseGrant, request, operation='Lease.LeaseGrant', timeout=timeout
+        )
 
-    async def revoke(self, lease_id: int) -> LeaseRevokeResponse:
+    async def revoke(self, lease_id: int, *, timeout: float | None = None) -> LeaseRevokeResponse:
         request = LeaseRevokeRequest(ID=lease_id)
-        return await self._rpc(self._stub.LeaseRevoke, request, operation='Lease.LeaseRevoke')
+        return await self._rpc(
+            self._stub.LeaseRevoke, request, operation='Lease.LeaseRevoke', timeout=timeout
+        )
 
-    async def time_to_live(self, lease_id: int, keys: bool = False) -> LeaseTimeToLiveResponse:
+    async def time_to_live(
+        self, lease_id: int, keys: bool = False, *, timeout: float | None = None
+    ) -> LeaseTimeToLiveResponse:
         request = LeaseTimeToLiveRequest(ID=lease_id, keys=keys)
         return await self._rpc(
             self._stub.LeaseTimeToLive,
             request,
             operation='Lease.LeaseTimeToLive',
+            timeout=timeout,
         )
 
-    async def leases(self) -> LeaseLeasesResponse:
+    async def leases(self, *, timeout: float | None = None) -> LeaseLeasesResponse:
         """List all active leases in the cluster."""
         return await self._rpc(
-            self._stub.LeaseLeases, LeaseLeasesRequest(), operation='Lease.LeaseLeases'
+            self._stub.LeaseLeases,
+            LeaseLeasesRequest(),
+            operation='Lease.LeaseLeases',
+            timeout=timeout,
         )
 
     def keep_alive(self, lease_id: int) -> grpc.aio.StreamStreamCall:

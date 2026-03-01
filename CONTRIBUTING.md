@@ -1,13 +1,13 @@
-# Contributing
+# Contribuindo
 
-## Local Setup
+## Configuração Local
 
 ```bash
 uv venv
 uv pip install -e .
 ```
 
-## Run Quality Checks
+## Executar Verificações de Qualidade
 
 ```bash
 .venv/bin/ruff format .
@@ -16,10 +16,10 @@ uv pip install -e .
 .venv/bin/pytest
 ```
 
-## Rules
+## Regras
 
-- Follow `CONTRACT.md`.
-- Keep changes small and focused.
-- Do not edit generated protobuf files.
-- Keep public API backward compatible.
-- Add tests for behavior changes.
+- Seguir o `CONTRACT.md`.
+- Manter as mudanças pequenas e focadas.
+- Não editar os arquivos protobuf gerados.
+- Manter a API pública compatível com versões anteriores.
+- Adicionar testes para mudanças de comportamento.

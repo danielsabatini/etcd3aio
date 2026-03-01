@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from aioetcd3._protobuf import AlarmMember, AlarmResponse, StatusResponse
-from aioetcd3.maintenance import AlarmType, MaintenanceService
+from etcd3aio._protobuf import AlarmMember, AlarmResponse, StatusResponse
+from etcd3aio.maintenance import AlarmType, MaintenanceService
 
 
 @pytest.mark.asyncio
@@ -15,7 +15,7 @@ async def test_status_returns_response() -> None:
     stub = MagicMock()
     stub.Status = AsyncMock(return_value=response)
 
-    with patch('aioetcd3.maintenance.MaintenanceStub', return_value=stub):
+    with patch('etcd3aio.maintenance.MaintenanceStub', return_value=stub):
         service = MaintenanceService(channel=MagicMock())
         result = await service.status()
 
@@ -33,7 +33,7 @@ async def test_alarms_sends_get_action() -> None:
     stub = MagicMock()
     stub.Alarm = AsyncMock(return_value=response)
 
-    with patch('aioetcd3.maintenance.MaintenanceStub', return_value=stub):
+    with patch('etcd3aio.maintenance.MaintenanceStub', return_value=stub):
         service = MaintenanceService(channel=MagicMock())
         result = await service.alarms()
 
@@ -49,7 +49,7 @@ async def test_alarm_deactivate_sends_deactivate_action() -> None:
     stub = MagicMock()
     stub.Alarm = AsyncMock(return_value=response)
 
-    with patch('aioetcd3.maintenance.MaintenanceStub', return_value=stub):
+    with patch('etcd3aio.maintenance.MaintenanceStub', return_value=stub):
         service = MaintenanceService(channel=MagicMock())
         result = await service.alarm_deactivate(AlarmType.NOSPACE, member_id=42)
 
@@ -65,7 +65,7 @@ async def test_alarm_deactivate_defaults_broadcast_all() -> None:
     stub = MagicMock()
     stub.Alarm = AsyncMock(return_value=AlarmResponse())
 
-    with patch('aioetcd3.maintenance.MaintenanceStub', return_value=stub):
+    with patch('etcd3aio.maintenance.MaintenanceStub', return_value=stub):
         service = MaintenanceService(channel=MagicMock())
         await service.alarm_deactivate()
 
@@ -81,7 +81,7 @@ async def test_alarms_response_contains_alarm_members() -> None:
     stub = MagicMock()
     stub.Alarm = AsyncMock(return_value=response)
 
-    with patch('aioetcd3.maintenance.MaintenanceStub', return_value=stub):
+    with patch('etcd3aio.maintenance.MaintenanceStub', return_value=stub):
         service = MaintenanceService(channel=MagicMock())
         result = await service.alarms()
 

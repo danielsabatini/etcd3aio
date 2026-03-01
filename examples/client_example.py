@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 
-from aioetcd3.client import Etcd3Client
+from etcd3aio.client import Etcd3Client
 
 
 def parse_args() -> argparse.Namespace:

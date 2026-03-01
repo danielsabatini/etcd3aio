@@ -4,11 +4,11 @@ import asyncio
 from collections.abc import AsyncGenerator, Sequence
 from typing import cast
 
-from aioetcd3 import Etcd3Client, EtcdConnectionError
-from aioetcd3._protobuf import WatchResponse
-from aioetcd3.kv import KVService
-from aioetcd3.lease import LeaseService
-from aioetcd3.watch import WatchService
+from etcd3aio import Etcd3Client, EtcdConnectionError
+from etcd3aio._protobuf import WatchResponse
+from etcd3aio.kv import KVService
+from etcd3aio.lease import LeaseService
+from etcd3aio.watch import WatchService
 
 
 async def _wait_for_watch_event(
@@ -48,7 +48,7 @@ async def run_demo(endpoints: Sequence[str]) -> None:
 async def _run_kv_demo(kv: KVService) -> None:
     key = 'example:kv'
 
-    await kv.put(key, 'hello-aioetcd3')
+    await kv.put(key, 'hello-etcd3aio')
     response = await kv.get(key)
 
     if not response.kvs:

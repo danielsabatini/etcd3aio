@@ -2,7 +2,7 @@ from __future__ import annotations
 
 
 class EtcdError(Exception):
-    """Base exception for aioetcd3."""
+    """Base exception for etcd3aio."""
 
 
 class EtcdTransientError(EtcdError):

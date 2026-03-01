@@ -1,33 +1,33 @@
-# aioetcd3
+# etcd3aio
 
-Async etcd v3 client for Python using `grpc.aio`.
+Cliente assíncrono para etcd v3 em Python usando `grpc.aio`.
 
-## Principles
+## Princípios
 
-- Simple facade API
-- Async-first
-- Strong typing
-- Easy to maintain
+- API de fachada simples
+- Async em primeiro lugar
+- Tipagem forte
+- Fácil de manter
 
-## Requirements
+## Requisitos
 
 - Python 3.13+
 - etcd v3
 
-## Quick Start
+## Início Rápido
 
-Start a local etcd cluster:
+Inicie um cluster etcd local:
 
 ```bash
 docker compose -f docker/docker-compose.yaml up -d
 ```
 
-Basic usage:
+Uso básico:
 
 ```python
 import asyncio
 
-from aioetcd3 import Etcd3Client
+from etcd3aio import Etcd3Client
 
 
 async def main() -> None:
@@ -41,9 +41,9 @@ if __name__ == '__main__':
     asyncio.run(main())
 ```
 
-## Project Docs
+## Documentação do Projeto
 
-- `CONTRACT.md`: non-negotiable project contract
-- `ARCHITECTURE.md`: module boundaries and responsibilities
-- `CONTRIBUTING.md`: local workflow and quality checks
-- `ROADMAP.md`: next features
+- `CONTRACT.md`: contrato não negociável do projeto
+- `ARCHITECTURE.md`: limites e responsabilidades dos módulos
+- `CONTRIBUTING.md`: fluxo de trabalho local e verificações de qualidade
+- `ROADMAP.md`: próximas funcionalidades

@@ -3,8 +3,8 @@ from __future__ import annotations
 import argparse
 import asyncio
 
-from aioetcd3.client import Etcd3Client
-from aioetcd3.kv import KVService
+from etcd3aio.client import Etcd3Client
+from etcd3aio.kv import KVService
 
 
 def parse_args() -> argparse.Namespace:

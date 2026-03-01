@@ -5,10 +5,10 @@ import asyncio
 from collections.abc import AsyncGenerator
 from typing import cast
 
-from aioetcd3._protobuf import WatchResponse
-from aioetcd3.client import Etcd3Client
-from aioetcd3.kv import KVService
-from aioetcd3.watch import WatchService
+from etcd3aio._protobuf import WatchResponse
+from etcd3aio.client import Etcd3Client
+from etcd3aio.kv import KVService
+from etcd3aio.watch import WatchService
 
 
 def parse_args() -> argparse.Namespace:

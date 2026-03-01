@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import grpc
 import pytest
 
-from aioetcd3._protobuf import WatchResponse
-from aioetcd3.watch import WatchService
+from etcd3aio._protobuf import WatchResponse
+from etcd3aio.watch import WatchFilter, WatchService
 
 
 class FakeRpcError(grpc.aio.AioRpcError):
@@ -60,8 +60,8 @@ async def test_watch_reconnects_on_transient_error() -> None:
     stub.Watch = MagicMock(side_effect=[first_stream, second_stream])
 
     with (
-        patch('aioetcd3.watch.WatchStub', return_value=stub),
-        patch('aioetcd3.watch.asyncio.sleep', new=AsyncMock()) as sleep_mock,
+        patch('etcd3aio.watch.WatchStub', return_value=stub),
+        patch('etcd3aio.watch.asyncio.sleep', new=AsyncMock()) as sleep_mock,
     ):
         service = WatchService(channel=MagicMock())
         watch_iterator = cast(
@@ -85,9 +85,84 @@ async def test_watch_raises_on_non_transient_error() -> None:
     stub = MagicMock()
     stub.Watch = MagicMock(return_value=failing_stream)
 
-    with patch('aioetcd3.watch.WatchStub', return_value=stub):
+    with patch('etcd3aio.watch.WatchStub', return_value=stub):
         service = WatchService(channel=MagicMock())
         watch_iterator = cast(AsyncGenerator[WatchResponse, None], service.watch('my-key'))
         with pytest.raises(FakeRpcError):
             await anext(watch_iterator)
         await watch_iterator.aclose()
+
+
+# ---------------------------------------------------------------------------
+# filters and progress_notify
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_watch_passes_filters_to_create_request() -> None:
+    """filters= is forwarded to WatchCreateRequest server-side."""
+    response = WatchResponse()
+    response.header.revision = 1
+    stream = FakeWatchStream(responses=[response])
+
+    captured_gen: AsyncGenerator | None = None
+
+    def _watch_side_effect(gen: object, *, metadata: object = None) -> FakeWatchStream:
+        nonlocal captured_gen
+        captured_gen = cast(AsyncGenerator, gen)
+        return stream
+
+    stub = MagicMock()
+    stub.Watch.side_effect = _watch_side_effect
+
+    with patch('etcd3aio.watch.WatchStub', return_value=stub):
+        service = WatchService(channel=MagicMock())
+        watch_iterator = cast(
+            AsyncGenerator[WatchResponse, None],
+            service.watch('key', filters=[WatchFilter.NOPUT, WatchFilter.NODELETE]),
+        )
+        await anext(watch_iterator)
+        await watch_iterator.aclose()
+
+    assert captured_gen is not None
+    first_msg = await captured_gen.__anext__()
+    assert list(first_msg.create_request.filters) == [
+        int(WatchFilter.NOPUT),
+        int(WatchFilter.NODELETE),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_watch_passes_progress_notify_to_create_request() -> None:
+    """progress_notify=True is forwarded to WatchCreateRequest."""
+    response = WatchResponse()
+    response.header.revision = 1
+    stream = FakeWatchStream(responses=[response])
+
+    captured_gen: AsyncGenerator | None = None
+
+    def _watch_side_effect(gen: object, *, metadata: object = None) -> FakeWatchStream:
+        nonlocal captured_gen
+        captured_gen = cast(AsyncGenerator, gen)
+        return stream
+
+    stub = MagicMock()
+    stub.Watch.side_effect = _watch_side_effect
+
+    with patch('etcd3aio.watch.WatchStub', return_value=stub):
+        service = WatchService(channel=MagicMock())
+        watch_iterator = cast(
+            AsyncGenerator[WatchResponse, None],
+            service.watch('key', progress_notify=True),
+        )
+        await anext(watch_iterator)
+        await watch_iterator.aclose()
+
+    assert captured_gen is not None
+    first_msg = await captured_gen.__anext__()
+    assert first_msg.create_request.progress_notify is True
+
+
+def test_watch_filter_enum_values() -> None:
+    assert int(WatchFilter.NOPUT) == 0
+    assert int(WatchFilter.NODELETE) == 1

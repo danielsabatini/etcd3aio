@@ -29,7 +29,7 @@ class MaintenanceService(BaseService):
         super().__init__(max_attempts=max_attempts)
         self._stub = MaintenanceStub(channel)
 
-    async def status(self) -> StatusResponse:
+    async def status(self, *, timeout: float | None = None) -> StatusResponse:
         """Return the status of the cluster member this client is connected to.
 
         Key fields:
@@ -39,9 +39,11 @@ class MaintenanceService(BaseService):
         - ``db_size_in_use``: bytes actually in use (after compaction).
         - ``version``: etcd server version string.
         """
-        return await self._rpc(self._stub.Status, StatusRequest(), operation='Maintenance.Status')
+        return await self._rpc(
+            self._stub.Status, StatusRequest(), operation='Maintenance.Status', timeout=timeout
+        )
 
-    async def alarms(self) -> AlarmResponse:
+    async def alarms(self, *, timeout: float | None = None) -> AlarmResponse:
         """List all active alarms in the cluster.
 
         Returns an :class:`AlarmResponse` whose ``alarms`` field is a list of
@@ -53,13 +55,16 @@ class MaintenanceService(BaseService):
             memberID=0,
             alarm=0,
         )
-        return await self._rpc(self._stub.Alarm, request, operation='Maintenance.Alarm')
+        return await self._rpc(
+            self._stub.Alarm, request, operation='Maintenance.Alarm', timeout=timeout
+        )
 
     async def alarm_deactivate(
         self,
         alarm_type: AlarmType = AlarmType.NONE,
         *,
         member_id: int = 0,
+        timeout: float | None = None,
     ) -> AlarmResponse:
         """Deactivate an alarm on one or all cluster members.
 
@@ -74,4 +79,6 @@ class MaintenanceService(BaseService):
             memberID=member_id,
             alarm=int(alarm_type),
         )
-        return await self._rpc(self._stub.Alarm, request, operation='Maintenance.Alarm')
+        return await self._rpc(
+            self._stub.Alarm, request, operation='Maintenance.Alarm', timeout=timeout
+        )

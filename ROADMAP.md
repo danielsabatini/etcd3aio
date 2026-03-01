@@ -1,71 +1,70 @@
 # Roadmap
 
-Reference: [etcd v3.6 API](https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/)
+Referência: [API etcd v3.6](https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/)
 
-## Implemented
+## Implementado
 
-### KV Service
-- `Range` → `kv.get()`
+### Serviço KV
+- `Range` → `kv.get()` — com `limit`, `sort_order` / `sort_target` (`SortOrder`, `SortTarget`), `keys_only`, `count_only`
 - `Put` → `kv.put()`
 - `DeleteRange` → `kv.delete()`
 - `Compact` → `kv.compact()`
-- `Txn` → `kv.txn()` + compare/op helpers
+- `Txn` → `kv.txn()` + helpers de comparação/operação
+- `prefix_range_end()` — helper para construir o limite superior exclusivo para varreduras de prefixo
 
-### Lease Service
+### Serviço Lease
 - `LeaseGrant` → `lease.grant()`
 - `LeaseRevoke` → `lease.revoke()`
 - `LeaseTimeToLive` → `lease.time_to_live()`
-- `LeaseKeepAlive` → `lease.keep_alive()` (raw stream) / `lease.keep_alive_context()` (background task)
+- `LeaseKeepAlive` → `lease.keep_alive()` (stream bruto) / `lease.keep_alive_context()` (tarefa em segundo plano)
 - `LeaseLeases` → `lease.leases()`
 
-### Watch Service
-- `Watch` → `watch.watch()`
+### Serviço Watch
+- `Watch` → `watch.watch()` — com `filters` (`WatchFilter`) e `progress_notify`
 
-### Maintenance Service
+### Serviço Maintenance
 - `Status` → `maintenance.status()`
 - `Alarm` (GET) → `maintenance.alarms()`
 - `Alarm` (DEACTIVATE) → `maintenance.alarm_deactivate()`
 
-### Concurrency primitives
-- `Lock` → `client.lock()` — distributed lock
-- `Election` → `client.election()` — leader election
+### Primitivos de Concorrência
+- `Lock` → `client.lock()` — lock distribuído
+- `Election` → `client.election()` — eleição de líder
 
-### Auth Service (developer-facing)
-- `AuthStatus` → `auth.auth_status()` — check if auth is enabled on the cluster
-- `Authenticate` → `auth.authenticate()` — obtain a token for a user/password pair
+### Serviço Auth (voltado ao desenvolvedor)
+- `AuthStatus` → `auth.auth_status()` — verifica se a autenticação está habilitada no cluster
+- `Authenticate` → `auth.authenticate()` — obtém um token para um par usuário/senha
 
-### Client
-- Connection manager with round-robin load balancing
-- Retry with exponential backoff (`BaseService._rpc`)
-- `client.ping()` — connectivity and write quorum check
-- Auth error mapping: `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError`
-- `client.set_token()` / `token=` constructor param — propagates auth token to all services as gRPC metadata
-
----
-
-## Admin (deferred)
+### Cliente
+- Gerenciador de conexão com balanceamento de carga round-robin
+- Retry com backoff exponencial (`BaseService._rpc`)
+- Timeout por chamada: `timeout: float | None = None` em todos os métodos de serviço (`asyncio.timeout()`)
+- `client.ping()` — verificação de conectividade e quórum de escrita
+- Mapeamento de erros de autenticação: `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError`
+- `client.set_token()` / parâmetro `token=` no construtor — propaga o token de autenticação para todos os serviços como metadata do gRPC
+- `client.token_refresher(name, password)` / `TokenRefresher` — gerenciador de contexto em segundo plano que re-autentica antes do token expirar
 
 ---
 
-## Admin (deferred)
+## Admin (adiado)
 
-> Operations for cluster operators, not application developers.
+> Operações para administradores de cluster, não para desenvolvedores de aplicações.
 
 
-### Cluster Service
-- `MemberList` — list all members with their peer/client URLs
-- `MemberAdd` / `MemberRemove` / `MemberUpdate` — membership management
-- `MemberPromote` — promote a learner to voting member
+### Serviço Cluster
+- `MemberList` — lista todos os membros com suas URLs de peer/client
+- `MemberAdd` / `MemberRemove` / `MemberUpdate` — gerenciamento de membros
+- `MemberPromote` — promove um learner a membro votante
 
-### Auth Service (admin)
-- `AuthEnable` / `AuthDisable` — turn auth on/off
-- User management: `UserAdd`, `UserGet`, `UserList`, `UserDelete`, `UserChangePassword`
-- Role management: `RoleAdd`, `RoleGet`, `RoleList`, `RoleDelete`
+### Serviço Auth (admin)
+- `AuthEnable` / `AuthDisable` — habilitar/desabilitar autenticação
+- Gerenciamento de usuários: `UserAdd`, `UserGet`, `UserList`, `UserDelete`, `UserChangePassword`
+- Gerenciamento de roles: `RoleAdd`, `RoleGet`, `RoleList`, `RoleDelete`
 - RBAC: `UserGrantRole`, `UserRevokeRole`, `RoleGrantPermission`, `RoleRevokePermission`
 
-### Maintenance (admin-heavy)
-- `Defragment` — reclaim storage space from the backend
-- `Snapshot` — stream a full backup of the backend database
-- `MoveLeader` — transfer leadership to another member
-- `Hash` / `HashKV` — checksum for data integrity verification
-- `Downgrade` — manage cluster version downgrade
+### Maintenance (pesado para admin)
+- `Defragment` — recuperar espaço de armazenamento do backend
+- `Snapshot` — transmitir um backup completo do banco de dados backend
+- `MoveLeader` — transferir liderança para outro membro
+- `Hash` / `HashKV` — checksum para verificação de integridade de dados
+- `Downgrade` — gerenciar downgrade de versão do cluster

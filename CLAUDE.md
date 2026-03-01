@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**aioetcd3** is an async Python client for etcd v3 using `grpc.aio`. It follows a strict **facade pattern** — a thin, well-typed wrapper over generated gRPC stubs with centralized retry logic.
+**etcd3aio** is an async Python client for etcd v3 using `grpc.aio`. It strictly follows the **facade pattern** — a thin, well-typed wrapper over generated gRPC stubs with centralized retry logic.
 
-Non-negotiable rules are documented in [CONTRACT.md](CONTRACT.md). Architectural boundaries are in [ARCHITECTURE.md](ARCHITECTURE.md).
+Non-negotiable rules are in [CONTRACT.md](CONTRACT.md). Architectural boundaries are in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Development Setup
 
@@ -33,10 +33,10 @@ ruff format .
 # Lint (with auto-fix)
 ruff check --fix .
 
-# Type check
+# Type checking
 pyright
 
-# Start local etcd cluster (3-node)
+# Start local etcd cluster (3 nodes)
 docker compose -f docker/docker-compose.yaml up -d
 ```
 
@@ -46,15 +46,15 @@ docker compose -f docker/docker-compose.yaml up -d
 
 | Module | Role |
 |---|---|
-| `client.py` | `Etcd3Client` — facade, lifecycle, wires services together |
-| `connections.py` | Channel creation, TLS, round-robin load balancing |
-| `base.py` | `BaseService` — shared unary RPC retry/backoff logic; `set_token()` for gRPC metadata |
-| `kv.py` | `KVService` — put/get/delete/compact/txn operations |
+| `client.py` | `Etcd3Client` — facade, lifecycle, wires services; `ping()`, `token_refresher()`, `lock()`, `election()` factory methods |
+| `connections.py` | `ConnectionManager` — channel creation, TLS, round-robin load balancing; `localhost` is auto-resolved to `127.0.0.1` |
+| `base.py` | `BaseService` — shared retry/backoff for unary RPC; `set_token()` for gRPC metadata |
+| `kv.py` | `KVService` — put/get/delete/compact/txn; `SortOrder`, `SortTarget` enums; `prefix_range_end()` helper |
 | `lease.py` | `LeaseService` — grant/revoke/leases/keep_alive; `LeaseKeepalive` background context manager |
 | `maintenance.py` | `MaintenanceService` — status/alarms/alarm_deactivate; `AlarmType` enum |
-| `auth.py` | `AuthService` — auth_status/authenticate for developer-facing auth |
+| `auth.py` | `AuthService` — auth_status/authenticate; `TokenRefresher` background context manager for token refresh |
 | `concurrency.py` | `Lock`, `Election` — distributed lock and leader election built on KV + Lease |
-| `watch.py` | `WatchService` — async iterator with auto-reconnect |
+| `watch.py` | `WatchService` — async iterator with automatic reconnection; `WatchFilter` enum |
 | `errors.py` | `EtcdError`, `EtcdConnectionError`, `EtcdTransientError`, `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError` |
 | `_protobuf.py` | Centralizes all protobuf imports and TypeAlias definitions |
 
@@ -64,19 +64,19 @@ docker compose -f docker/docker-compose.yaml up -d
 User call → Service method → Protobuf request object → BaseService._rpc() → gRPC stub → Response
 ```
 
-Transient errors (`UNAVAILABLE`, `DEADLINE_EXCEEDED`) are retried with exponential backoff (up to 3 attempts by default, 0.05s → 1.0s max). On exhaustion: `UNAVAILABLE` raises `EtcdConnectionError`; `DEADLINE_EXCEEDED` raises `EtcdTransientError`. Non-retried gRPC errors are also mapped: `UNAUTHENTICATED` → `EtcdUnauthenticatedError`; `PERMISSION_DENIED` → `EtcdPermissionDeniedError`.
+Transient errors (`UNAVAILABLE`, `DEADLINE_EXCEEDED`) are retried with exponential backoff (up to 3 attempts by default, 0.05 s → 1.0 s max). After exhaustion: `UNAVAILABLE` raises `EtcdConnectionError`; `DEADLINE_EXCEEDED` raises `EtcdTransientError`. Non-retried gRPC errors are also mapped: `UNAUTHENTICATED` → `EtcdUnauthenticatedError`; `PERMISSION_DENIED` → `EtcdPermissionDeniedError`.
 
-Watch streams track `next_revision` for safe reconnection after transient failures.
+Watch streams track `next_revision` for safe reconnection after transient failures. Unlike unary RPCs, watch reconnects indefinitely (no `max_attempts` limit).
 
 ### Protobuf Layer
 
-All generated proto stubs live in `src/aioetcd3/proto/`. **Never modify these files** — they are generated from the etcd v3 API. The `_protobuf.py` module adds the proto directory to `sys.path` and provides TypeAlias exports for use throughout the package.
+All generated proto stubs live in `src/etcd3aio/proto/`. **Never modify these files** — they are generated from the etcd v3 API. The `_protobuf.py` module adds the proto directory to `sys.path` and provides TypeAlias exports for use across the package.
 
 ## Key Invariants
 
 - **Python 3.13+** only — use modern typing syntax
 - **Async-first** — never block the event loop, always `await` gRPC calls
-- **Facade pattern** — keep gRPC internals isolated inside service modules
+- **Facade pattern** — keep gRPC details isolated inside service modules
 - **Strong typing** — use `TypeAlias` and satisfy `pyright` in basic mode
-- **Backward compatible** — only additive changes to public API
-- String keys are UTF-8 encoded to bytes at the service layer
+- **Backward compatibility** — additive changes only to the public API
+- String keys are encoded as UTF-8 bytes at the service layer

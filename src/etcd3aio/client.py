@@ -6,7 +6,7 @@ from types import TracebackType
 
 import grpc.aio
 
-from .auth import AuthService
+from .auth import AuthService, TokenRefresher
 from .concurrency import Election, Lock
 from .connections import ConnectionManager
 from .errors import EtcdError
@@ -15,7 +15,7 @@ from .lease import LeaseService
 from .maintenance import MaintenanceService
 from .watch import WatchService
 
-_PING_KEY = '__aioetcd3:ping__'
+_PING_KEY = '__etcd3aio:ping__'
 
 
 class Etcd3Client:
@@ -107,6 +107,32 @@ class Etcd3Client:
         finally:
             with contextlib.suppress(EtcdError):
                 await self.lease.revoke(lease.ID)
+
+    def token_refresher(
+        self,
+        name: str,
+        password: str,
+        *,
+        interval: float = 240.0,
+    ) -> TokenRefresher:
+        """Return a context manager that authenticates and keeps the token refreshed.
+
+        On entry the user is authenticated immediately and the token is applied
+        to all services via :meth:`set_token`.  A background task re-authenticates
+        every *interval* seconds.  On exit the task is cancelled and the token is
+        cleared.
+
+        Args:
+            name: etcd username.
+            password: etcd password.
+            interval: Seconds between token refreshes (default 240 s = 4 min,
+                safe for etcd's default 5-minute token TTL).
+
+        Must be connected before calling this method.
+        """
+        if self.auth is None:
+            raise RuntimeError('client is not connected')
+        return TokenRefresher(self.auth, self.set_token, name, password, interval=interval)
 
     def lock(self, name: str, *, ttl: int = 30) -> Lock:
         """Return a distributed lock for *name*. Must be used as an async context manager."""

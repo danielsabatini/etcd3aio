@@ -1,38 +1,38 @@
-# Architecture
+# Arquitetura
 
-`aioetcd3` is organized as a thin facade over async gRPC services.
+O `etcd3aio` é organizado como uma fachada fina sobre serviços gRPC assíncronos.
 
-## Modules
+## Módulos
 
-- `client.py`: lifecycle and service wiring (`Etcd3Client`); `lock()` / `election()` factories
-- `connections.py`: channel creation and connection options
-- `base.py`: shared unary RPC retry helper; maps `UNAUTHENTICATED` → `EtcdUnauthenticatedError`, `PERMISSION_DENIED` → `EtcdPermissionDeniedError`; `set_token()` injects auth token as gRPC metadata on all calls
-- `kv.py`: KV operations (put/get/delete/compact/txn)
-- `lease.py`: lease operations (grant/revoke/time_to_live/keep_alive/leases); `LeaseKeepalive` async context manager for background keepalive
-- `auth.py`: developer-facing auth — `auth_status()` / `authenticate()`
-- `maintenance.py`: cluster status and alarm management
-- `concurrency.py`: distributed lock (`Lock`) and leader election (`Election`) built on KV + Lease
-- `watch.py`: watch stream with basic reconnect behavior
-- `_protobuf.py`: protobuf/stub aliases and import bootstrap
-- `errors.py`: library-level exceptions
+- `client.py`: ciclo de vida e fiação dos serviços (`Etcd3Client`); fábricas `lock()` / `election()` / `token_refresher()`
+- `connections.py`: criação de canal, TLS, balanceamento de carga round-robin, keepalive do gRPC
+- `base.py`: helper de retry/backoff para RPC unário compartilhado; `asyncio.timeout()` por chamada; mapeia `UNAUTHENTICATED` → `EtcdUnauthenticatedError`, `PERMISSION_DENIED` → `EtcdPermissionDeniedError`; `set_token()` injeta o token de autenticação como metadata do gRPC
+- `kv.py`: operações KV (put/get/delete/compact/txn); enums `SortOrder` / `SortTarget`; utilitário `prefix_range_end()`
+- `lease.py`: operações de lease (grant/revoke/time_to_live/keep_alive/leases); gerenciador de contexto assíncrono `LeaseKeepalive` para keepalive em segundo plano
+- `auth.py`: autenticação voltada ao desenvolvedor — `auth_status()` / `authenticate()`; gerenciador de contexto assíncrono `TokenRefresher` para renovação automática de token
+- `maintenance.py`: status do cluster e gerenciamento de alarmes; enum `AlarmType`
+- `concurrency.py`: lock distribuído (`Lock`) e eleição de líder (`Election`) construídos sobre KV + Lease
+- `watch.py`: stream de watch com reconexão automática e rastreamento de revisão; enum `WatchFilter` para filtragem de eventos no servidor
+- `_protobuf.py`: aliases de protobuf/stub e bootstrap de importação
+- `errors.py`: exceções da biblioteca (`EtcdError`, `EtcdConnectionError`, `EtcdTransientError`, `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError`)
 
-## Design Boundaries
+## Limites de Design
 
-- Facade stays small.
-- gRPC internals stay out of user-facing API.
-- Service modules should be cohesive and easy to test.
-- Avoid deep inheritance and complex indirection.
+- A fachada permanece pequena.
+- Os detalhes do gRPC ficam fora da API voltada ao usuário.
+- Os módulos de serviço devem ser coesos e fáceis de testar.
+- Evitar herança profunda e indireção complexa.
 
-## Request Flow
+## Fluxo de Requisição
 
-1. User calls facade service method.
-2. Service builds protobuf request.
-3. Service executes gRPC call.
-4. Retry helper handles transient unary failures.
-5. Response is returned as protobuf object.
+1. Usuário chama o método de serviço da fachada.
+2. O serviço constrói o objeto de requisição protobuf.
+3. O serviço executa a chamada gRPC.
+4. O helper de retry trata falhas transitórias unárias.
+5. A resposta é retornada como objeto protobuf.
 
-## Non-Goals (for now)
+## Não-Objetivos (por ora)
 
-- Custom DSLs around etcd operations
-- Heavy plugin/interceptor framework
-- Multiplexed watch manager for large-scale fan-out
+- DSLs personalizadas para operações etcd
+- Framework pesado de plugins/interceptores
+- Gerenciador de watch multiplexado para fan-out em larga escala

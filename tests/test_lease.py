@@ -4,13 +4,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from aioetcd3._protobuf import (
+from etcd3aio._protobuf import (
     LeaseGrantResponse,
     LeaseLeasesResponse,
     LeaseRevokeResponse,
     LeaseTimeToLiveResponse,
 )
-from aioetcd3.lease import LeaseKeepalive, LeaseService
+from etcd3aio.lease import LeaseKeepalive, LeaseService
 
 
 class _FakeStream:
@@ -44,7 +44,7 @@ async def test_grant_revoke_time_to_live() -> None:
     )
     stub.LeaseKeepAlive = MagicMock()
 
-    with patch('aioetcd3.lease.LeaseStub', return_value=stub):
+    with patch('etcd3aio.lease.LeaseStub', return_value=stub):
         service = LeaseService(channel=MagicMock())
         grant_response = await service.grant(ttl=grant_ttl, lease_id=lease_id)
         await service.revoke(lease_id=lease_id)
@@ -78,7 +78,7 @@ async def test_keep_alive_starts_stream_with_lease_id() -> None:
     stub.LeaseTimeToLive = AsyncMock(return_value=LeaseTimeToLiveResponse())
     stub.LeaseKeepAlive = MagicMock(return_value=stream)
 
-    with patch('aioetcd3.lease.LeaseStub', return_value=stub):
+    with patch('etcd3aio.lease.LeaseStub', return_value=stub):
         service = LeaseService(channel=MagicMock())
         returned_stream = service.keep_alive(lease_id=lease_id)
 
@@ -97,7 +97,7 @@ async def test_leases_returns_all_active_leases() -> None:
     stub.LeaseGrant = AsyncMock(return_value=LeaseGrantResponse())
     stub.LeaseLeases = AsyncMock(return_value=leases_response)
 
-    with patch('aioetcd3.lease.LeaseStub', return_value=stub):
+    with patch('etcd3aio.lease.LeaseStub', return_value=stub):
         service = LeaseService(channel=MagicMock())
         response = await service.leases()
 

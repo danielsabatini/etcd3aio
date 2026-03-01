@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import grpc
 import pytest
 
-from aioetcd3._protobuf import (
+from etcd3aio._protobuf import (
     CompactionResponse,
     Compare,
     DeleteRangeResponse,
@@ -13,8 +14,8 @@ from aioetcd3._protobuf import (
     RangeResponse,
     TxnResponse,
 )
-from aioetcd3.errors import EtcdConnectionError, EtcdTransientError
-from aioetcd3.kv import KVService
+from etcd3aio.errors import EtcdConnectionError, EtcdTransientError
+from etcd3aio.kv import KVService, SortOrder, SortTarget, prefix_range_end
 
 
 class FakeRpcError(grpc.aio.AioRpcError):
@@ -33,7 +34,7 @@ class FakeRpcError(grpc.aio.AioRpcError):
 async def test_put_encodes_string_inputs() -> None:
     stub = _build_kv_stub()
 
-    with patch('aioetcd3.kv.KVStub', return_value=stub):
+    with patch('etcd3aio.kv.KVStub', return_value=stub):
         service = KVService(channel=MagicMock())
         await service.put('key', 'value', lease=10, prev_kv=True)
 
@@ -48,7 +49,7 @@ async def test_put_encodes_string_inputs() -> None:
 async def test_get_and_delete_accept_bytes_range_end() -> None:
     stub = _build_kv_stub()
 
-    with patch('aioetcd3.kv.KVStub', return_value=stub):
+    with patch('etcd3aio.kv.KVStub', return_value=stub):
         service = KVService(channel=MagicMock())
         await service.get(b'a', range_end=b'z', serializable=True, revision=4)
         await service.delete(b'a', range_end=b'z', prev_kv=True)
@@ -77,8 +78,8 @@ async def test_transient_error_retries_then_succeeds() -> None:
     )
 
     with (
-        patch('aioetcd3.kv.KVStub', return_value=stub),
-        patch('aioetcd3.base.asyncio.sleep', new=AsyncMock()) as sleep_mock,
+        patch('etcd3aio.kv.KVStub', return_value=stub),
+        patch('etcd3aio.base.asyncio.sleep', new=AsyncMock()) as sleep_mock,
     ):
         service = KVService(channel=MagicMock(), max_attempts=2)
         await service.put('k', 'v')
@@ -93,8 +94,8 @@ async def test_transient_error_raises_after_max_attempts() -> None:
     stub.Put = AsyncMock(side_effect=FakeRpcError(grpc.StatusCode.DEADLINE_EXCEEDED))
 
     with (
-        patch('aioetcd3.kv.KVStub', return_value=stub),
-        patch('aioetcd3.base.asyncio.sleep', new=AsyncMock()),
+        patch('etcd3aio.kv.KVStub', return_value=stub),
+        patch('etcd3aio.base.asyncio.sleep', new=AsyncMock()),
     ):
         service = KVService(channel=MagicMock(), max_attempts=2)
         with pytest.raises(EtcdTransientError, match='KV.Put failed after 2 attempts'):
@@ -107,8 +108,8 @@ async def test_unavailable_raises_connection_error_after_max_attempts() -> None:
     stub.Put = AsyncMock(side_effect=FakeRpcError(grpc.StatusCode.UNAVAILABLE))
 
     with (
-        patch('aioetcd3.kv.KVStub', return_value=stub),
-        patch('aioetcd3.base.asyncio.sleep', new=AsyncMock()),
+        patch('etcd3aio.kv.KVStub', return_value=stub),
+        patch('etcd3aio.base.asyncio.sleep', new=AsyncMock()),
     ):
         service = KVService(channel=MagicMock(), max_attempts=2)
         with pytest.raises(EtcdConnectionError, match='KV.Put failed after 2 attempts'):
@@ -123,8 +124,8 @@ async def test_error_message_includes_grpc_detail() -> None:
     )
 
     with (
-        patch('aioetcd3.kv.KVStub', return_value=stub),
-        patch('aioetcd3.base.asyncio.sleep', new=AsyncMock()),
+        patch('etcd3aio.kv.KVStub', return_value=stub),
+        patch('etcd3aio.base.asyncio.sleep', new=AsyncMock()),
     ):
         service = KVService(channel=MagicMock(), max_attempts=1)
         with pytest.raises(EtcdConnectionError, match='etcdserver: no leader'):
@@ -136,7 +137,7 @@ async def test_txn_calls_stub_with_compare_and_operations() -> None:
     stub = _build_kv_stub()
     stub.Txn = AsyncMock(return_value=TxnResponse(succeeded=True))
 
-    with patch('aioetcd3.kv.KVStub', return_value=stub):
+    with patch('etcd3aio.kv.KVStub', return_value=stub):
         service = KVService(channel=MagicMock())
 
         compare = [service.txn_compare_value('my-key', 'v1')]
@@ -190,7 +191,7 @@ async def test_compact_calls_stub_with_revision() -> None:
     stub = _build_kv_stub()
     stub.Compact = AsyncMock(return_value=CompactionResponse())
 
-    with patch('aioetcd3.kv.KVStub', return_value=stub):
+    with patch('etcd3aio.kv.KVStub', return_value=stub):
         service = KVService(channel=MagicMock())
         await service.compact(revision=42)
         await service.compact(revision=100, physical=True)
@@ -202,6 +203,107 @@ async def test_compact_calls_stub_with_revision() -> None:
     assert first_request.physical is False
     assert second_request.revision == 100
     assert second_request.physical is True
+
+
+# ---------------------------------------------------------------------------
+# Timeout
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_rpc_timeout_raises_timeout_error() -> None:
+    """timeout= causes TimeoutError when the call takes too long."""
+    stub = MagicMock()
+
+    async def _slow_put(*args: object, **kwargs: object) -> PutResponse:
+        await asyncio.sleep(10)
+        return PutResponse()
+
+    stub.Put = _slow_put
+
+    with patch('etcd3aio.kv.KVStub', return_value=stub):
+        service = KVService(channel=MagicMock())
+        with pytest.raises(TimeoutError):
+            await service.put('key', 'value', timeout=0.001)
+
+
+# ---------------------------------------------------------------------------
+# get() new fields: limit, sort, keys_only, count_only
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_get_limit_is_passed_to_range_request() -> None:
+    stub = _build_kv_stub()
+
+    with patch('etcd3aio.kv.KVStub', return_value=stub):
+        service = KVService(channel=MagicMock())
+        await service.get('/services/', range_end='/services0', limit=50)
+
+    request = stub.Range.await_args.args[0]
+    assert request.limit == 50
+
+
+@pytest.mark.asyncio
+async def test_get_sort_order_and_target_are_passed() -> None:
+    stub = _build_kv_stub()
+
+    with patch('etcd3aio.kv.KVStub', return_value=stub):
+        service = KVService(channel=MagicMock())
+        await service.get(
+            '/items/',
+            range_end='/items0',
+            sort_order=SortOrder.DESCEND,
+            sort_target=SortTarget.MOD,
+        )
+
+    request = stub.Range.await_args.args[0]
+    assert request.sort_order == int(SortOrder.DESCEND)
+    assert request.sort_target == int(SortTarget.MOD)
+
+
+@pytest.mark.asyncio
+async def test_get_keys_only_suppresses_values() -> None:
+    stub = _build_kv_stub()
+
+    with patch('etcd3aio.kv.KVStub', return_value=stub):
+        service = KVService(channel=MagicMock())
+        await service.get('/prefix/', range_end='/prefix0', keys_only=True)
+
+    request = stub.Range.await_args.args[0]
+    assert request.keys_only is True
+    assert request.count_only is False
+
+
+@pytest.mark.asyncio
+async def test_get_count_only_returns_count() -> None:
+    stub = _build_kv_stub()
+
+    with patch('etcd3aio.kv.KVStub', return_value=stub):
+        service = KVService(channel=MagicMock())
+        await service.get('/prefix/', range_end='/prefix0', count_only=True)
+
+    request = stub.Range.await_args.args[0]
+    assert request.count_only is True
+
+
+# ---------------------------------------------------------------------------
+# prefix_range_end helper
+# ---------------------------------------------------------------------------
+
+
+def test_prefix_range_end_increments_last_byte() -> None:
+    assert prefix_range_end('/services/') == b'/services0'
+    assert prefix_range_end(b'abc') == b'abd'
+
+
+def test_prefix_range_end_handles_0xff_bytes() -> None:
+    # When the last byte is 0xFF, it carries over to the previous byte.
+    assert prefix_range_end(b'a\xff') == b'b'
+
+
+def test_prefix_range_end_all_0xff_returns_null_byte() -> None:
+    assert prefix_range_end(b'\xff\xff') == b'\x00'
 
 
 def _build_kv_stub() -> MagicMock:

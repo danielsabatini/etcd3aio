@@ -63,34 +63,36 @@ class BaseService:
         request: RequestT,
         *,
         operation: str,
+        timeout: float | None = None,
     ) -> ResponseT:
-        backoff_seconds = self._initial_backoff_seconds
+        async with asyncio.timeout(timeout):
+            backoff_seconds = self._initial_backoff_seconds
 
-        for attempt in range(1, self._max_attempts + 1):
-            try:
-                return await call(request, metadata=self._metadata or None)  # type: ignore[call-arg]
-            except grpc.aio.AioRpcError as exc:
-                is_last_attempt = attempt == self._max_attempts
-                if not self._is_transient_error(exc) or is_last_attempt:
-                    if self._is_transient_error(exc):
+            for attempt in range(1, self._max_attempts + 1):
+                try:
+                    return await call(request, metadata=self._metadata or None)  # type: ignore[call-arg]
+                except grpc.aio.AioRpcError as exc:
+                    is_last_attempt = attempt == self._max_attempts
+                    if not self._is_transient_error(exc) or is_last_attempt:
+                        if self._is_transient_error(exc):
+                            detail = exc.details() or ''
+                            suffix = f' ({detail})' if detail else ''
+                            message = (
+                                f'{operation} failed after {self._max_attempts} attempts: '
+                                f'{exc.code().name}{suffix}'
+                            )
+                            if exc.code() == grpc.StatusCode.UNAVAILABLE:
+                                raise EtcdConnectionError(message) from exc
+                            raise EtcdTransientError(message) from exc
                         detail = exc.details() or ''
-                        suffix = f' ({detail})' if detail else ''
-                        message = (
-                            f'{operation} failed after {self._max_attempts} attempts: '
-                            f'{exc.code().name}{suffix}'
-                        )
-                        if exc.code() == grpc.StatusCode.UNAVAILABLE:
-                            raise EtcdConnectionError(message) from exc
-                        raise EtcdTransientError(message) from exc
-                    detail = exc.details() or ''
-                    suffix = f': {detail}' if detail else ''
-                    if exc.code() == grpc.StatusCode.UNAUTHENTICATED:
-                        raise EtcdUnauthenticatedError(f'{operation} failed{suffix}') from exc
-                    if exc.code() == grpc.StatusCode.PERMISSION_DENIED:
-                        raise EtcdPermissionDeniedError(f'{operation} failed{suffix}') from exc
-                    raise
+                        suffix = f': {detail}' if detail else ''
+                        if exc.code() == grpc.StatusCode.UNAUTHENTICATED:
+                            raise EtcdUnauthenticatedError(f'{operation} failed{suffix}') from exc
+                        if exc.code() == grpc.StatusCode.PERMISSION_DENIED:
+                            raise EtcdPermissionDeniedError(f'{operation} failed{suffix}') from exc
+                        raise
 
-                await asyncio.sleep(backoff_seconds)
-                backoff_seconds = min(backoff_seconds * 2, self._max_backoff_seconds)
+                    await asyncio.sleep(backoff_seconds)
+                    backoff_seconds = min(backoff_seconds * 2, self._max_backoff_seconds)
 
         raise RuntimeError('unreachable')

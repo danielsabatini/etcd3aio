@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from aioetcd3.client import Etcd3Client
-from aioetcd3.concurrency import Election, Lock, _prefix_range_end
-from aioetcd3.errors import EtcdError
+from etcd3aio.client import Etcd3Client
+from etcd3aio.concurrency import Election, Lock
+from etcd3aio.errors import EtcdError
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -77,19 +77,6 @@ def _make_services(
 
 
 # ---------------------------------------------------------------------------
-# _prefix_range_end
-# ---------------------------------------------------------------------------
-
-
-def test_prefix_range_end_increments_last_byte() -> None:
-    assert _prefix_range_end(b'abc/') == b'abc0'
-
-
-def test_prefix_range_end_handles_0xff_suffix() -> None:
-    assert _prefix_range_end(b'a\xff') == b'b'
-
-
-# ---------------------------------------------------------------------------
 # Lock — no contention
 # ---------------------------------------------------------------------------
 
@@ -97,7 +84,7 @@ def test_prefix_range_end_handles_0xff_suffix() -> None:
 @pytest.mark.asyncio
 async def test_lock_acquired_immediately_when_no_contention() -> None:
     lease_id = 42
-    prefix = b'__aioetcd3:lock/mylock/'
+    prefix = b'__etcd3aio:lock/mylock/'
     my_key = prefix + b'000000000000002a'
 
     range_resp = _make_range_resp([_make_kv(my_key, 5)], revision=5)
@@ -119,7 +106,7 @@ async def test_lock_acquired_immediately_when_no_contention() -> None:
 @pytest.mark.asyncio
 async def test_lock_waits_for_predecessor_deletion() -> None:
     lease_id = 42
-    prefix = b'__aioetcd3:lock/mylock/'
+    prefix = b'__etcd3aio:lock/mylock/'
     predecessor_key = prefix + b'0000000000000010'
     my_key = prefix + b'000000000000002a'
 
@@ -150,7 +137,7 @@ async def test_lock_waits_for_predecessor_deletion() -> None:
 @pytest.mark.asyncio
 async def test_lock_release_suppresses_etcd_errors() -> None:
     lease_id = 1
-    prefix = b'__aioetcd3:lock/x/'
+    prefix = b'__etcd3aio:lock/x/'
     my_key = prefix + b'0000000000000001'
 
     range_resp = _make_range_resp([_make_kv(my_key, 1)], revision=1)
@@ -182,7 +169,7 @@ def test_lock_keys_are_isolated_by_name() -> None:
 @pytest.mark.asyncio
 async def test_election_stores_value_as_leader_identity() -> None:
     lease_id = 7
-    prefix = b'__aioetcd3:election/leader/'
+    prefix = b'__etcd3aio:election/leader/'
     my_key = prefix + b'0000000000000007'
 
     range_resp = _make_range_resp([_make_kv(my_key, 1)], revision=1)
@@ -202,7 +189,7 @@ async def test_election_stores_value_as_leader_identity() -> None:
 @pytest.mark.asyncio
 async def test_election_waits_for_predecessor() -> None:
     lease_id = 7
-    prefix = b'__aioetcd3:election/leader/'
+    prefix = b'__etcd3aio:election/leader/'
     predecessor_key = prefix + b'0000000000000003'
     my_key = prefix + b'0000000000000007'
 

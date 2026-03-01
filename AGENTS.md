@@ -1,26 +1,33 @@
-# Agent Instructions
+# Instruções para Agentes
 
-This repository implements `aioetcd3`.
+Este repositório implementa o `etcd3aio`.
 
-## Source of Truth
+## Fonte da Verdade
 
-Read `CONTRACT.md` first.
+Leia o `CONTRACT.md` primeiro.
 
-## Hard Rules
+## Regras Obrigatórias
 
 - Python 3.13+
-- Async-first (do not block event loop)
-- Await gRPC calls when applicable
-- Keep facade pattern
-- Keep client lightweight
-- Isolate gRPC logic in services/connections
-- Use strong typing and `TypeAlias` when helpful
-- Follow Pyright mode configured in `pyproject.toml`
-- `ruff format`, `ruff check --fix`, `pyright`, and `pytest` must all pass
-- Do not modify generated protobuf files
-- Keep backwards compatibility
+- Async em primeiro lugar (não bloquear o loop de eventos)
+- Usar `await` nas chamadas gRPC quando aplicável
+- Manter o padrão de fachada
+- Manter o cliente leve
+- Isolar a lógica gRPC nos serviços/conexões
+- Usar tipagem forte e `TypeAlias` quando útil
+- Seguir o modo Pyright configurado no `pyproject.toml`
+- `ruff format`, `ruff check --fix`, `pyright` e `pytest` devem todos passar
+- Não modificar os arquivos protobuf gerados
+- Manter compatibilidade retroativa
 
-## References
-
-- etcd API: https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/
+## Referências
 - asyncio: https://docs.python.org/3/howto/asyncio.html
+- Protocolo de descoberta: https://etcd.io/docs/v3.6/dev-guide/discovery_protocol/
+- Configurar um cluster local: https://etcd.io/docs/v3.6/dev-guide/local_cluster/
+- Interagindo com o etcd: https://etcd.io/docs/v3.6/dev-guide/interacting_v3/
+- Por que o gRPC gateway: https://etcd.io/docs/v3.6/dev-guide/api_grpc_gateway/
+- Nomenclatura e descoberta gRPC: https://etcd.io/docs/v3.6/dev-guide/grpc_naming/
+- Limites do sistema: https://etcd.io/docs/v3.6/dev-guide/limit/
+- Funcionalidades do etcd: https://etcd.io/docs/v3.6/dev-guide/features/
+- Referência da API: https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/
+- Referência da API: concorrência: https://etcd.io/docs/v3.6/dev-guide/api_concurrency_reference_v3/

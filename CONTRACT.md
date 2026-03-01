@@ -1,57 +1,57 @@
-# Project Contract
+# Contrato do Projeto
 
-This contract defines mandatory rules for `aioetcd3`.
+Este contrato define as regras obrigatórias para o `etcd3aio`.
 
-## 1. Product Contract
+## 1. Contrato de Produto
 
-- Keep the client simple to use.
-- Keep the facade pattern: `Etcd3Client` exposes services.
-- Keep backward compatibility for public APIs unless explicitly planned.
-- Prefer additive changes over breaking changes.
+- Manter o cliente simples de usar.
+- Manter o padrão de fachada: `Etcd3Client` expõe os serviços.
+- Manter compatibilidade retroativa nas APIs públicas, salvo planejamento explícito.
+- Preferir mudanças aditivas a mudanças que quebram compatibilidade.
 
-## 2. Runtime Contract
+## 2. Contrato de Execução
 
-- Python 3.13+ only.
-- Never block the asyncio event loop.
-- Prefer async APIs end-to-end.
-- Every gRPC call must be awaited when applicable.
+- Apenas Python 3.13+.
+- Nunca bloquear o loop de eventos do asyncio.
+- Preferir APIs assíncronas de ponta a ponta.
+- Toda chamada gRPC deve ser aguardada com `await` quando aplicável.
 
-## 3. Code Contract
+## 3. Contrato de Código
 
-- Keep gRPC details isolated in service/connection layers.
-- Keep `Etcd3Client` lightweight (wiring/lifecycle only).
-- Use strong, explicit typing.
-- `pyproject.toml` defines the enforced Pyright mode.
-- Use `TypeAlias` when it improves readability.
-- Do not modify generated protobuf files under `src/aioetcd3/proto/`.
+- Manter os detalhes do gRPC isolados nas camadas de serviço/conexão.
+- Manter o `Etcd3Client` leve (apenas fiação e ciclo de vida).
+- Usar tipagem forte e explícita.
+- O `pyproject.toml` define o modo Pyright aplicado.
+- Usar `TypeAlias` quando melhorar a legibilidade.
+- Não modificar os arquivos protobuf gerados em `src/etcd3aio/proto/`.
 
-## 4. Reliability Contract
+## 4. Contrato de Confiabilidade
 
-- Handle transient gRPC failures predictably.
-- Keep retries simple and centralized.
-- Ensure channels and streams are closed/cancelled correctly.
+- Tratar falhas transitórias do gRPC de forma previsível.
+- Manter as retentativas simples e centralizadas.
+- Garantir que canais e streams sejam fechados/cancelados corretamente.
 
-## 5. Quality Contract
+## 5. Contrato de Qualidade
 
-- `ruff format .` must pass (auto-formats code).
-- `ruff check --fix .` must pass (linting).
-- `pyright` must pass.
-- `pytest` must pass.
-- New behavior should include focused tests.
+- `ruff format .` deve passar (formata o código automaticamente).
+- `ruff check --fix .` deve passar (linting).
+- `pyright` deve passar.
+- `pytest` deve passar.
+- Novos comportamentos devem incluir testes focados.
 
-## 6. Documentation Contract
+## 6. Contrato de Documentação
 
-- Keep docs short and current.
-- Avoid duplicated guidance across files.
-- Prefer one source of truth for rules (this file).
+- Manter a documentação curta e atualizada.
+- Evitar orientações duplicadas entre arquivos.
+- Preferir uma única fonte de verdade para as regras (este arquivo).
 
-## 7. Change Checklist
+## 7. Checklist de Mudanças
 
-Before merge, confirm:
+Antes do merge, confirmar:
 
-- API remained simple.
-- No unnecessary abstraction was introduced.
-- Async behavior is preserved.
-- Typing and tests are updated.
-- Quality checks are green.
-- All `.md` files reviewed for consistency: module tables, ROADMAP status, and cross-references match the current implementation.
+- A API permaneceu simples.
+- Nenhuma abstração desnecessária foi introduzida.
+- O comportamento assíncrono foi preservado.
+- Tipagem e testes foram atualizados.
+- As verificações de qualidade estão verdes.
+- Todos os arquivos `.md` foram revisados para consistência: tabelas de módulos, status do ROADMAP e referências cruzadas correspondem à implementação atual.
