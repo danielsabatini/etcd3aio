@@ -6,16 +6,20 @@ import grpc
 import pytest
 
 from aioetcd3._protobuf import Compare, DeleteRangeResponse, PutResponse, RangeResponse, TxnResponse
-from aioetcd3.errors import EtcdTransientError
+from aioetcd3.errors import EtcdConnectionError, EtcdTransientError
 from aioetcd3.kv import KVService
 
 
 class FakeRpcError(grpc.aio.AioRpcError):
-    def __init__(self, status_code: grpc.StatusCode) -> None:
+    def __init__(self, status_code: grpc.StatusCode, detail: str = '') -> None:
         self._status_code = status_code
+        self._detail = detail
 
     def code(self) -> grpc.StatusCode:
         return self._status_code
+
+    def details(self) -> str:
+        return self._detail
 
 
 @pytest.mark.asyncio
@@ -87,6 +91,36 @@ async def test_transient_error_raises_after_max_attempts() -> None:
     ):
         service = KVService(channel=MagicMock(), max_attempts=2)
         with pytest.raises(EtcdTransientError, match='KV.Put failed after 2 attempts'):
+            await service.put('k', 'v')
+
+
+@pytest.mark.asyncio
+async def test_unavailable_raises_connection_error_after_max_attempts() -> None:
+    stub = _build_kv_stub()
+    stub.Put = AsyncMock(side_effect=FakeRpcError(grpc.StatusCode.UNAVAILABLE))
+
+    with (
+        patch('aioetcd3.kv.KVStub', return_value=stub),
+        patch('aioetcd3.base.asyncio.sleep', new=AsyncMock()),
+    ):
+        service = KVService(channel=MagicMock(), max_attempts=2)
+        with pytest.raises(EtcdConnectionError, match='KV.Put failed after 2 attempts'):
+            await service.put('k', 'v')
+
+
+@pytest.mark.asyncio
+async def test_error_message_includes_grpc_detail() -> None:
+    stub = _build_kv_stub()
+    stub.Put = AsyncMock(
+        side_effect=FakeRpcError(grpc.StatusCode.UNAVAILABLE, 'etcdserver: no leader')
+    )
+
+    with (
+        patch('aioetcd3.kv.KVStub', return_value=stub),
+        patch('aioetcd3.base.asyncio.sleep', new=AsyncMock()),
+    ):
+        service = KVService(channel=MagicMock(), max_attempts=1)
+        with pytest.raises(EtcdConnectionError, match='etcdserver: no leader'):
             await service.put('k', 'v')
 
 

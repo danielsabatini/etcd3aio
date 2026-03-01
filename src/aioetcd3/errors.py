@@ -7,3 +7,7 @@ class EtcdError(Exception):
 
 class EtcdTransientError(EtcdError):
     """Raised when a transient gRPC error persists after retries."""
+
+
+class EtcdConnectionError(EtcdError):
+    """Raised when the etcd cluster is unreachable after retries."""

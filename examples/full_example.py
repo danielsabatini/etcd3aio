@@ -4,8 +4,8 @@ import asyncio
 from collections.abc import AsyncGenerator, Sequence
 from typing import cast
 
+from aioetcd3 import Etcd3Client, EtcdConnectionError
 from aioetcd3._protobuf import WatchResponse
-from aioetcd3.client import Etcd3Client
 from aioetcd3.kv import KVService
 from aioetcd3.lease import LeaseService
 from aioetcd3.watch import WatchService
@@ -36,6 +36,9 @@ async def run_demo(endpoints: Sequence[str]) -> None:
 
         if kv is None or lease is None or watch is None:
             raise RuntimeError('client services are not initialized')
+
+        await client.ping()
+        print('Ping ok -> cluster is reachable and writes are accepted')
 
         await _run_kv_demo(kv)
         await _run_lease_demo(kv, lease)
@@ -88,8 +91,13 @@ async def _run_watch_demo(kv: KVService, watch: WatchService) -> None:
 
 
 async def main() -> None:
-    endpoints = ['localhost:2379']
-    await run_demo(endpoints)
+    endpoints = ['localhost:2379', 'localhost:3379', 'localhost:4379']
+    try:
+        await run_demo(endpoints)
+    except EtcdConnectionError as exc:
+        print(f'Error: could not reach etcd at {endpoints}')
+        print(f'Cause: {exc}')
+        raise SystemExit(1) from None
 
 
 if __name__ == '__main__':

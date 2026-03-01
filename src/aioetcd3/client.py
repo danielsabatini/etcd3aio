@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Sequence
 from types import TracebackType
 
 import grpc.aio
 
 from .connections import ConnectionManager
+from .errors import EtcdError
 from .kv import KVService
 from .lease import LeaseService
 from .watch import WatchService
+
+_PING_KEY = '__aioetcd3:ping__'
 
 
 class Etcd3Client:
@@ -55,6 +59,28 @@ class Etcd3Client:
         self.kv = None
         self.lease = None
         self.watch = None
+
+    async def ping(self, *, write_check: bool = True) -> None:
+        """Verify cluster health.
+
+        Raises EtcdConnectionError if the cluster is unreachable.
+        With write_check=True (default), also validates write capability,
+        detecting quorum loss in multi-node clusters.
+        """
+        if self.kv is None or self.lease is None:
+            raise RuntimeError('client is not connected')
+
+        await self.kv.get(_PING_KEY)
+
+        if not write_check:
+            return
+
+        lease = await self.lease.grant(ttl=5)
+        try:
+            await self.kv.put(_PING_KEY, b'', lease=lease.ID)
+        finally:
+            with contextlib.suppress(EtcdError):
+                await self.lease.revoke(lease.ID)
 
     async def __aenter__(self) -> Etcd3Client:
         await self.connect()

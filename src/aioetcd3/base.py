@@ -6,7 +6,7 @@ from typing import TypeAlias, TypeVar
 
 import grpc
 
-from .errors import EtcdTransientError
+from .errors import EtcdConnectionError, EtcdTransientError
 
 RequestT = TypeVar('RequestT')
 ResponseT = TypeVar('ResponseT')
@@ -59,10 +59,14 @@ class BaseService:
                 is_last_attempt = attempt == self._max_attempts
                 if not self._is_transient_error(exc) or is_last_attempt:
                     if self._is_transient_error(exc):
+                        detail = exc.details() or ''
+                        suffix = f' ({detail})' if detail else ''
                         message = (
                             f'{operation} failed after {self._max_attempts} attempts: '
-                            f'{exc.code().name}'
+                            f'{exc.code().name}{suffix}'
                         )
+                        if exc.code() == grpc.StatusCode.UNAVAILABLE:
+                            raise EtcdConnectionError(message) from exc
                         raise EtcdTransientError(message) from exc
                     raise
 
