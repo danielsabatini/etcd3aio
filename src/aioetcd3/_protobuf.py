@@ -23,6 +23,7 @@ from etcd.api.authpb import auth_pb2  # noqa: E402,F401
 from etcd.api.versionpb import version_pb2  # noqa: E402,F401
 from etcd.api.etcdserverpb import rpc_pb2, rpc_pb2_grpc  # noqa: E402
 
+AuthStub: TypeAlias = rpc_pb2_grpc.AuthStub
 KVStub: TypeAlias = rpc_pb2_grpc.KVStub
 LeaseStub: TypeAlias = rpc_pb2_grpc.LeaseStub
 MaintenanceStub: TypeAlias = rpc_pb2_grpc.MaintenanceStub
@@ -65,8 +66,18 @@ WatchCreateRequest: TypeAlias = rpc_pb2.WatchCreateRequest
 WatchCancelRequest: TypeAlias = rpc_pb2.WatchCancelRequest
 WatchResponse: TypeAlias = rpc_pb2.WatchResponse
 
+AuthenticateRequest: TypeAlias = rpc_pb2.AuthenticateRequest
+AuthenticateResponse: TypeAlias = rpc_pb2.AuthenticateResponse
+AuthStatusRequest: TypeAlias = rpc_pb2.AuthStatusRequest
+AuthStatusResponse: TypeAlias = rpc_pb2.AuthStatusResponse
+
 __all__ = [
     'AlarmMember',
+    'AuthStub',
+    'AuthenticateRequest',
+    'AuthenticateResponse',
+    'AuthStatusRequest',
+    'AuthStatusResponse',
     'AlarmRequest',
     'AlarmResponse',
     'Compare',

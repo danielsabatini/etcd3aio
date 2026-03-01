@@ -13,14 +13,15 @@ async def test_connect_initializes_services() -> None:
     channel = AsyncMock()
     get_channel_mock = AsyncMock(return_value=channel)
 
+    auth_service = MagicMock()
     kv_service = MagicMock()
     lease_service = MagicMock()
     watch_service = MagicMock()
-
     maintenance_service = MagicMock()
 
     with (
         patch('aioetcd3.client.ConnectionManager.get_channel', new=get_channel_mock),
+        patch('aioetcd3.client.AuthService', return_value=auth_service),
         patch('aioetcd3.client.KVService', return_value=kv_service),
         patch('aioetcd3.client.LeaseService', return_value=lease_service),
         patch('aioetcd3.client.MaintenanceService', return_value=maintenance_service),
@@ -29,6 +30,7 @@ async def test_connect_initializes_services() -> None:
         client = Etcd3Client(['localhost:2379'])
         await client.connect()
 
+        assert client.auth is auth_service
         assert client.kv is kv_service
         assert client.lease is lease_service
         assert client.maintenance is maintenance_service
@@ -37,6 +39,7 @@ async def test_connect_initializes_services() -> None:
         await client.close()
 
     channel.close.assert_awaited_once()
+    assert client.auth is None
     assert client.kv is None
     assert client.lease is None
     assert client.maintenance is None
@@ -54,6 +57,7 @@ async def test_async_context_manager_lifecycle() -> None:
 
     with (
         patch('aioetcd3.client.ConnectionManager.get_channel', new=get_channel_mock),
+        patch('aioetcd3.client.AuthService', return_value=MagicMock()),
         patch('aioetcd3.client.KVService', return_value=kv_service),
         patch('aioetcd3.client.LeaseService', return_value=lease_service),
         patch('aioetcd3.client.MaintenanceService', return_value=MagicMock()),
@@ -80,6 +84,7 @@ async def test_ping_performs_read_and_write_check() -> None:
         patch(
             'aioetcd3.client.ConnectionManager.get_channel', new=AsyncMock(return_value=AsyncMock())
         ),
+        patch('aioetcd3.client.AuthService', return_value=MagicMock()),
         patch('aioetcd3.client.KVService', return_value=kv),
         patch('aioetcd3.client.LeaseService', return_value=lease),
         patch('aioetcd3.client.MaintenanceService', return_value=MagicMock()),
@@ -105,6 +110,7 @@ async def test_ping_read_only_skips_write() -> None:
         patch(
             'aioetcd3.client.ConnectionManager.get_channel', new=AsyncMock(return_value=AsyncMock())
         ),
+        patch('aioetcd3.client.AuthService', return_value=MagicMock()),
         patch('aioetcd3.client.KVService', return_value=kv),
         patch('aioetcd3.client.LeaseService', return_value=lease),
         patch('aioetcd3.client.MaintenanceService', return_value=MagicMock()),
@@ -130,6 +136,7 @@ async def test_ping_revoke_suppressed_on_write_failure() -> None:
         patch(
             'aioetcd3.client.ConnectionManager.get_channel', new=AsyncMock(return_value=AsyncMock())
         ),
+        patch('aioetcd3.client.AuthService', return_value=MagicMock()),
         patch('aioetcd3.client.KVService', return_value=kv),
         patch('aioetcd3.client.LeaseService', return_value=lease),
         patch('aioetcd3.client.MaintenanceService', return_value=MagicMock()),

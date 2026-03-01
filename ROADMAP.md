@@ -34,24 +34,34 @@ Reference: [etcd v3.6 API](https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/
 - Connection manager with round-robin load balancing
 - Retry with exponential backoff (`BaseService._rpc`)
 - `client.ping()` — connectivity and write quorum check
+- Auth error mapping: `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError`
 
 ---
 
 ## Next
 
-### 1. Cluster Service
+### Auth Service (developer-facing)
+- `AuthStatus` → `auth.auth_status()` — check if auth is enabled on the cluster
+- `Authenticate` → `auth.authenticate()` — obtain a token for a user/password pair
+
+---
+
+## Admin (deferred)
+
+> Operations for cluster operators, not application developers.
+
+### Cluster Service
 - `MemberList` — list all members with their peer/client URLs
 - `MemberAdd` / `MemberRemove` / `MemberUpdate` — membership management
 - `MemberPromote` — promote a learner to voting member
 
-### 3. Auth Service
-- `AuthEnable` / `AuthDisable` / `AuthStatus`
-- `Authenticate` — obtain a token for subsequent authenticated calls
+### Auth Service (admin)
+- `AuthEnable` / `AuthDisable` — turn auth on/off
 - User management: `UserAdd`, `UserGet`, `UserList`, `UserDelete`, `UserChangePassword`
 - Role management: `RoleAdd`, `RoleGet`, `RoleList`, `RoleDelete`
 - RBAC: `UserGrantRole`, `UserRevokeRole`, `RoleGrantPermission`, `RoleRevokePermission`
 
-### 4. Maintenance — admin-heavy (deferred)
+### Maintenance (admin-heavy)
 - `Defragment` — reclaim storage space from the backend
 - `Snapshot` — stream a full backup of the backend database
 - `MoveLeader` — transfer leadership to another member

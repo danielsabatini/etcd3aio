@@ -52,9 +52,10 @@ docker compose -f docker/docker-compose.yaml up -d
 | `kv.py` | `KVService` — put/get/delete/compact/txn operations |
 | `lease.py` | `LeaseService` — grant/revoke/leases/keep_alive |
 | `maintenance.py` | `MaintenanceService` — status/alarms/alarm_deactivate; `AlarmType` enum |
+| `auth.py` | `AuthService` — auth_status/authenticate for developer-facing auth |
 | `concurrency.py` | `Lock`, `Election` — distributed lock and leader election built on KV + Lease |
 | `watch.py` | `WatchService` — async iterator with auto-reconnect |
-| `errors.py` | `EtcdError`, `EtcdConnectionError`, `EtcdTransientError` |
+| `errors.py` | `EtcdError`, `EtcdConnectionError`, `EtcdTransientError`, `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError` |
 | `_protobuf.py` | Centralizes all protobuf imports and TypeAlias definitions |
 
 ### Request Flow
@@ -63,7 +64,7 @@ docker compose -f docker/docker-compose.yaml up -d
 User call → Service method → Protobuf request object → BaseService._rpc() → gRPC stub → Response
 ```
 
-Transient errors (`UNAVAILABLE`, `DEADLINE_EXCEEDED`) are retried with exponential backoff (up to 3 attempts by default, 0.05s → 1.0s max). On exhaustion: `UNAVAILABLE` raises `EtcdConnectionError`; `DEADLINE_EXCEEDED` raises `EtcdTransientError`.
+Transient errors (`UNAVAILABLE`, `DEADLINE_EXCEEDED`) are retried with exponential backoff (up to 3 attempts by default, 0.05s → 1.0s max). On exhaustion: `UNAVAILABLE` raises `EtcdConnectionError`; `DEADLINE_EXCEEDED` raises `EtcdTransientError`. Non-retried gRPC errors are also mapped: `UNAUTHENTICATED` → `EtcdUnauthenticatedError`; `PERMISSION_DENIED` → `EtcdPermissionDeniedError`.
 
 Watch streams track `next_revision` for safe reconnection after transient failures.
 

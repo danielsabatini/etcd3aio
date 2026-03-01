@@ -6,7 +6,12 @@ from typing import TypeAlias, TypeVar
 
 import grpc
 
-from .errors import EtcdConnectionError, EtcdTransientError
+from .errors import (
+    EtcdConnectionError,
+    EtcdPermissionDeniedError,
+    EtcdTransientError,
+    EtcdUnauthenticatedError,
+)
 
 RequestT = TypeVar('RequestT')
 ResponseT = TypeVar('ResponseT')
@@ -68,6 +73,12 @@ class BaseService:
                         if exc.code() == grpc.StatusCode.UNAVAILABLE:
                             raise EtcdConnectionError(message) from exc
                         raise EtcdTransientError(message) from exc
+                    detail = exc.details() or ''
+                    suffix = f': {detail}' if detail else ''
+                    if exc.code() == grpc.StatusCode.UNAUTHENTICATED:
+                        raise EtcdUnauthenticatedError(f'{operation} failed{suffix}') from exc
+                    if exc.code() == grpc.StatusCode.PERMISSION_DENIED:
+                        raise EtcdPermissionDeniedError(f'{operation} failed{suffix}') from exc
                     raise
 
                 await asyncio.sleep(backoff_seconds)

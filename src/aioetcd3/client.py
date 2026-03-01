@@ -6,6 +6,7 @@ from types import TracebackType
 
 import grpc.aio
 
+from .auth import AuthService
 from .concurrency import Election, Lock
 from .connections import ConnectionManager
 from .errors import EtcdError
@@ -36,6 +37,7 @@ class Etcd3Client:
         self._watch_max_reconnect_backoff_seconds = watch_max_reconnect_backoff_seconds
 
         self._channel: grpc.aio.Channel | None = None
+        self.auth: AuthService | None = None
         self.kv: KVService | None = None
         self.lease: LeaseService | None = None
         self.maintenance: MaintenanceService | None = None
@@ -44,6 +46,7 @@ class Etcd3Client:
     async def connect(self) -> None:
         """Initializes channel and service facades."""
         self._channel = await self._manager.get_channel(**self._conn_args)
+        self.auth = AuthService(self._channel, max_attempts=self._rpc_max_attempts)
         self.kv = KVService(self._channel, max_attempts=self._rpc_max_attempts)
         self.lease = LeaseService(self._channel, max_attempts=self._rpc_max_attempts)
         self.maintenance = MaintenanceService(self._channel, max_attempts=self._rpc_max_attempts)
@@ -60,6 +63,7 @@ class Etcd3Client:
             await self._channel.close()
 
         self._channel = None
+        self.auth = None
         self.kv = None
         self.lease = None
         self.maintenance = None

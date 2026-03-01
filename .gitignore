@@ -175,3 +175,6 @@ __pycache__/
 
 __pycache__/
   *.cpython-313.pyc
+
+AI Agents
+.claude
