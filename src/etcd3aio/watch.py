@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import AsyncIterator, Sequence
 from enum import IntEnum
 from typing import TypeAlias
@@ -10,6 +11,8 @@ import grpc.aio
 
 from ._protobuf import WatchCreateRequest, WatchRequest, WatchResponse, WatchStub
 from .base import BaseService
+
+_log = logging.getLogger(__name__)
 
 BytesLike: TypeAlias = str | bytes
 
@@ -108,6 +111,11 @@ class WatchService(BaseService):
                 if not self._is_transient_error(exc):
                     raise
 
+                _log.warning(
+                    'watch: transient error (%s), reconnecting in %.2f s',
+                    exc.code().name,
+                    reconnect_backoff_seconds,
+                )
                 await asyncio.sleep(reconnect_backoff_seconds)
                 reconnect_backoff_seconds = min(
                     reconnect_backoff_seconds * 2,

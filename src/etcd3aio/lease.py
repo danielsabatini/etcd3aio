@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
 from collections.abc import AsyncIterator
 from types import TracebackType
 
@@ -20,6 +21,8 @@ from ._protobuf import (
     LeaseTimeToLiveResponse,
 )
 from .base import BaseService, _Metadata
+
+_log = logging.getLogger(__name__)
 
 
 class LeaseKeepalive:
@@ -91,9 +94,13 @@ class LeaseKeepalive:
                         self._alive = False
                         return
                     interval = max(1, response.TTL // 3)
-            except grpc.aio.AioRpcError:
-                # Transient error: keep trying; the lease still has remaining TTL.
-                pass
+            except grpc.aio.AioRpcError as exc:
+                _log.warning(
+                    'lease-keepalive: request failed for lease %d (%s)',
+                    self._lease_id,
+                    exc.code().name,
+                    exc_info=True,
+                )
             finally:
                 stream.cancel()
 
