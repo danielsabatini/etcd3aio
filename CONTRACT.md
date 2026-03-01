@@ -45,7 +45,9 @@ This contract defines the mandatory rules for `etcd3aio`.
 
 - Keep documentation short and up to date.
 - Avoid duplicating guidance across files.
-- Prefer a single source of truth for rules (`CONTRIBUTING.md`).
+- `CONTRIBUTING.md` is the single source of truth for actionable code and process rules.
+- After any change, keep cross-references consistent: module tables in `ARCHITECTURE.md`, and `README.md` must match the implementation; `ROADMAP.md` status must reflect what is done; `CHANGELOG.md` must record each versioned change.
+- Keep `README.md` complete and accessible to beginners, intermediate users, advanced users, and contributors.
 
 ## 7. Change Checklist
 

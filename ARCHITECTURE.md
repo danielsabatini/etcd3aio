@@ -7,7 +7,7 @@
 - `client.py`: service lifecycle and wiring (`Etcd3Client`); `lock()` / `election()` / `token_refresher()` factory methods
 - `connections.py`: channel creation, TLS, round-robin load balancing, gRPC keepalive
 - `base.py`: shared retry/backoff helper for unary RPCs; per-call `asyncio.timeout()`; maps `UNAUTHENTICATED` → `EtcdUnauthenticatedError`, `PERMISSION_DENIED` → `EtcdPermissionDeniedError`; `set_token()` injects auth token as gRPC metadata
-- `kv.py`: KV operations (put/get/delete/compact/txn); `SortOrder` / `SortTarget` enums; `prefix_range_end()` utility
+- `kv.py`: KV operations (put/get/delete/compact/txn); `SortOrder` / `SortTarget` enums; `prefix_range_end()` utility; `txn_compare_create_revision()` for the "key does not exist" idiom
 - `lease.py`: lease operations (grant/revoke/time_to_live/keep_alive/leases); `LeaseKeepalive` async context manager for background keepalive
 - `auth.py`: developer-facing auth — `auth_status()` / `authenticate()`; `TokenRefresher` async context manager for automatic token renewal
 - `maintenance.py`: cluster status and alarm management; `AlarmType` enum

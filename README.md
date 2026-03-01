@@ -20,7 +20,7 @@ Async Python client for etcd v3 using `grpc.aio`.
 ## Requirements
 
 - Python 3.13+
-- etcd v3.5+
+- etcd v3.5+ (see [Local cluster](#local-cluster-docker) to run one locally)
 
 ## Installation
 
@@ -32,25 +32,29 @@ pip install etcd3aio
 
 ```python
 import asyncio
-from etcd3aio import Etcd3Client
+from etcd3aio import Etcd3Client, EtcdConnectionError
 
 async def main() -> None:
-    async with Etcd3Client(['localhost:2379']) as client:
-        await client.ping()
+    try:
+        async with Etcd3Client(['localhost:2379']) as client:
+            await client.ping()
 
-        # Key-value
-        await client.kv.put('myapp/greeting', 'hello')
-        resp = await client.kv.get('myapp/greeting')
-        print(resp.kvs[0].value.decode())  # hello
+            # Key-value
+            await client.kv.put('myapp/greeting', 'hello')
+            resp = await client.kv.get('myapp/greeting')
+            print(resp.kvs[0].value.decode())  # hello
 
-        # Distributed lock
-        async with client.lock('myapp/resource'):
-            print('acquired exclusive section')
+            # Distributed lock
+            async with client.lock('myapp/resource'):
+                print('acquired exclusive section')
 
-        # Leader election
-        async with client.election('myapp/leader', value=b'node-1') as e:
-            leader = await e.leader()
-            print(f'leader: {leader.kvs[0].value.decode()}')
+            # Leader election
+            async with client.election('myapp/leader', value=b'node-1') as e:
+                leader = await e.leader()
+                print(f'leader: {leader.kvs[0].value.decode()}')
+    except EtcdConnectionError:
+        print('could not connect to etcd')
+        raise SystemExit(1)
 
 asyncio.run(main())
 ```
@@ -176,6 +180,22 @@ alarms = await client.maintenance.alarms()
 await client.maintenance.alarm_deactivate(AlarmType.NOSPACE)
 ```
 
+### Multi-endpoint & TLS
+
+Pass multiple endpoints for automatic round-robin load balancing. For TLS, supply the certificate bytes directly to the client constructor:
+
+```python
+from pathlib import Path
+
+async with Etcd3Client(
+    ['etcd-node1:2379', 'etcd-node2:2379', 'etcd-node3:2379'],
+    ca_cert=Path('ca.crt').read_bytes(),
+    cert_key=Path('client.key').read_bytes(),    # mutual TLS (optional)
+    cert_chain=Path('client.crt').read_bytes(),  # mutual TLS (optional)
+) as client:
+    await client.ping()
+```
+
 ## Local cluster (Docker)
 
 ```bash
@@ -191,6 +211,8 @@ The [`examples/`](examples/) directory contains standalone scripts for every mod
 | Script | Covers |
 |---|---|
 | `get_started_example.py` | most common use cases |
+| `client_example.py` | client lifecycle, manual connect/close, `ping()` |
+| `connections_example.py` | `ConnectionManager`, endpoint health check, cluster smoke test |
 | `kv_example.py` | put, get, delete, prefix scan, sort, compact |
 | `lease_example.py` | grant, revoke, keep-alive, TTL |
 | `watch_example.py` | basic watch, filters, prefix range |
