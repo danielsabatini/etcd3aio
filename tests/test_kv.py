@@ -5,7 +5,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import grpc
 import pytest
 
-from aioetcd3._protobuf import Compare, DeleteRangeResponse, PutResponse, RangeResponse, TxnResponse
+from aioetcd3._protobuf import (
+    CompactionResponse,
+    Compare,
+    DeleteRangeResponse,
+    PutResponse,
+    RangeResponse,
+    TxnResponse,
+)
 from aioetcd3.errors import EtcdConnectionError, EtcdTransientError
 from aioetcd3.kv import KVService
 
@@ -178,10 +185,30 @@ def test_txn_helper_builders() -> None:
     assert delete_op.request_delete_range.prev_kv is True
 
 
+@pytest.mark.asyncio
+async def test_compact_calls_stub_with_revision() -> None:
+    stub = _build_kv_stub()
+    stub.Compact = AsyncMock(return_value=CompactionResponse())
+
+    with patch('aioetcd3.kv.KVStub', return_value=stub):
+        service = KVService(channel=MagicMock())
+        await service.compact(revision=42)
+        await service.compact(revision=100, physical=True)
+
+    first_request = stub.Compact.await_args_list[0].args[0]
+    second_request = stub.Compact.await_args_list[1].args[0]
+
+    assert first_request.revision == 42
+    assert first_request.physical is False
+    assert second_request.revision == 100
+    assert second_request.physical is True
+
+
 def _build_kv_stub() -> MagicMock:
     stub = MagicMock()
     stub.Put = AsyncMock(return_value=PutResponse())
     stub.Range = AsyncMock(return_value=RangeResponse())
     stub.DeleteRange = AsyncMock(return_value=DeleteRangeResponse())
     stub.Txn = AsyncMock(return_value=TxnResponse())
+    stub.Compact = AsyncMock(return_value=CompactionResponse())
     return stub

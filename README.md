@@ -19,7 +19,7 @@ Async etcd v3 client for Python using `grpc.aio`.
 Start a local etcd cluster:
 
 ```bash
-docker compose up -d
+docker compose -f docker/docker-compose.yaml up -d
 ```
 
 Basic usage:

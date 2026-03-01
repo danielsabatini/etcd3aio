@@ -10,7 +10,8 @@ uv pip install -e .
 ## Run Quality Checks
 
 ```bash
-.venv/bin/ruff check .
+.venv/bin/ruff format .
+.venv/bin/ruff check --fix .
 .venv/bin/pyright
 .venv/bin/pytest
 ```

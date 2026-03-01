@@ -6,6 +6,7 @@ import pytest
 
 from aioetcd3._protobuf import (
     LeaseGrantResponse,
+    LeaseLeasesResponse,
     LeaseRevokeResponse,
     LeaseTimeToLiveResponse,
 )
@@ -69,3 +70,19 @@ async def test_keep_alive_starts_stream_with_lease_id() -> None:
     request_generator = stub.LeaseKeepAlive.call_args.args[0]
     first_request = await anext(request_generator)
     assert first_request.ID == lease_id
+
+
+@pytest.mark.asyncio
+async def test_leases_returns_all_active_leases() -> None:
+    leases_response = LeaseLeasesResponse()
+
+    stub = MagicMock()
+    stub.LeaseGrant = AsyncMock(return_value=LeaseGrantResponse())
+    stub.LeaseLeases = AsyncMock(return_value=leases_response)
+
+    with patch('aioetcd3.lease.LeaseStub', return_value=stub):
+        service = LeaseService(channel=MagicMock())
+        response = await service.leases()
+
+    assert response is leases_response
+    stub.LeaseLeases.assert_awaited_once()

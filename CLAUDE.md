@@ -27,14 +27,17 @@ pytest tests/test_kv.py
 # Run a single test
 pytest tests/test_kv.py::test_put_success
 
-# Lint
-ruff check .
+# Format
+ruff format .
+
+# Lint (with auto-fix)
+ruff check --fix .
 
 # Type check
 pyright
 
 # Start local etcd cluster (3-node)
-docker compose -f docker/docker-compose.yml up -d
+docker compose -f docker/docker-compose.yaml up -d
 ```
 
 ## Architecture
@@ -46,10 +49,12 @@ docker compose -f docker/docker-compose.yml up -d
 | `client.py` | `Etcd3Client` — facade, lifecycle, wires services together |
 | `connections.py` | Channel creation, TLS, round-robin load balancing |
 | `base.py` | `BaseService` — shared unary RPC retry/backoff logic |
-| `kv.py` | `KVService` — put/get/delete/txn operations |
-| `lease.py` | `LeaseService` — grant/revoke/keep_alive |
+| `kv.py` | `KVService` — put/get/delete/compact/txn operations |
+| `lease.py` | `LeaseService` — grant/revoke/leases/keep_alive |
+| `maintenance.py` | `MaintenanceService` — status/alarms/alarm_deactivate; `AlarmType` enum |
+| `concurrency.py` | `Lock`, `Election` — distributed lock and leader election built on KV + Lease |
 | `watch.py` | `WatchService` — async iterator with auto-reconnect |
-| `errors.py` | `EtcdError`, `EtcdTransientError` |
+| `errors.py` | `EtcdError`, `EtcdConnectionError`, `EtcdTransientError` |
 | `_protobuf.py` | Centralizes all protobuf imports and TypeAlias definitions |
 
 ### Request Flow
@@ -58,7 +63,7 @@ docker compose -f docker/docker-compose.yml up -d
 User call → Service method → Protobuf request object → BaseService._rpc() → gRPC stub → Response
 ```
 
-Transient errors (`UNAVAILABLE`, `DEADLINE_EXCEEDED`) are retried with exponential backoff (up to 3 attempts by default, 0.05s → 1.0s max). `EtcdTransientError` is raised when all retries are exhausted.
+Transient errors (`UNAVAILABLE`, `DEADLINE_EXCEEDED`) are retried with exponential backoff (up to 3 attempts by default, 0.05s → 1.0s max). On exhaustion: `UNAVAILABLE` raises `EtcdConnectionError`; `DEADLINE_EXCEEDED` raises `EtcdTransientError`.
 
 Watch streams track `next_revision` for safe reconnection after transient failures.
 

@@ -8,6 +8,8 @@ from ._protobuf import (
     LeaseGrantRequest,
     LeaseGrantResponse,
     LeaseKeepAliveRequest,
+    LeaseLeasesRequest,
+    LeaseLeasesResponse,
     LeaseRevokeRequest,
     LeaseRevokeResponse,
     LeaseStub,
@@ -38,6 +40,12 @@ class LeaseService(BaseService):
             self._stub.LeaseTimeToLive,
             request,
             operation='Lease.LeaseTimeToLive',
+        )
+
+    async def leases(self) -> LeaseLeasesResponse:
+        """List all active leases in the cluster."""
+        return await self._rpc(
+            self._stub.LeaseLeases, LeaseLeasesRequest(), operation='Lease.LeaseLeases'
         )
 
     def keep_alive(self, lease_id: int) -> grpc.aio.StreamStreamCall:

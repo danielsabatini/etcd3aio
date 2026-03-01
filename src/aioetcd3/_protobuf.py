@@ -25,6 +25,7 @@ from etcd.api.etcdserverpb import rpc_pb2, rpc_pb2_grpc  # noqa: E402
 
 KVStub: TypeAlias = rpc_pb2_grpc.KVStub
 LeaseStub: TypeAlias = rpc_pb2_grpc.LeaseStub
+MaintenanceStub: TypeAlias = rpc_pb2_grpc.MaintenanceStub
 WatchStub: TypeAlias = rpc_pb2_grpc.WatchStub
 
 PutRequest: TypeAlias = rpc_pb2.PutRequest
@@ -39,6 +40,8 @@ RequestOp: TypeAlias = rpc_pb2.RequestOp
 ResponseOp: TypeAlias = rpc_pb2.ResponseOp
 TxnRequest: TypeAlias = rpc_pb2.TxnRequest
 TxnResponse: TypeAlias = rpc_pb2.TxnResponse
+CompactionRequest: TypeAlias = rpc_pb2.CompactionRequest
+CompactionResponse: TypeAlias = rpc_pb2.CompactionResponse
 
 LeaseGrantRequest: TypeAlias = rpc_pb2.LeaseGrantRequest
 LeaseGrantResponse: TypeAlias = rpc_pb2.LeaseGrantResponse
@@ -48,6 +51,14 @@ LeaseKeepAliveRequest: TypeAlias = rpc_pb2.LeaseKeepAliveRequest
 LeaseKeepAliveResponse: TypeAlias = rpc_pb2.LeaseKeepAliveResponse
 LeaseTimeToLiveRequest: TypeAlias = rpc_pb2.LeaseTimeToLiveRequest
 LeaseTimeToLiveResponse: TypeAlias = rpc_pb2.LeaseTimeToLiveResponse
+LeaseLeasesRequest: TypeAlias = rpc_pb2.LeaseLeasesRequest
+LeaseLeasesResponse: TypeAlias = rpc_pb2.LeaseLeasesResponse
+
+StatusRequest: TypeAlias = rpc_pb2.StatusRequest
+StatusResponse: TypeAlias = rpc_pb2.StatusResponse
+AlarmRequest: TypeAlias = rpc_pb2.AlarmRequest
+AlarmResponse: TypeAlias = rpc_pb2.AlarmResponse
+AlarmMember: TypeAlias = rpc_pb2.AlarmMember
 
 WatchRequest: TypeAlias = rpc_pb2.WatchRequest
 WatchCreateRequest: TypeAlias = rpc_pb2.WatchCreateRequest
@@ -55,7 +66,12 @@ WatchCancelRequest: TypeAlias = rpc_pb2.WatchCancelRequest
 WatchResponse: TypeAlias = rpc_pb2.WatchResponse
 
 __all__ = [
+    'AlarmMember',
+    'AlarmRequest',
+    'AlarmResponse',
     'Compare',
+    'CompactionRequest',
+    'CompactionResponse',
     'DeleteRangeRequest',
     'DeleteRangeResponse',
     'KVStub',
@@ -66,6 +82,9 @@ __all__ = [
     'LeaseRevokeRequest',
     'LeaseRevokeResponse',
     'LeaseStub',
+    'LeaseLeasesRequest',
+    'MaintenanceStub',
+    'LeaseLeasesResponse',
     'LeaseTimeToLiveRequest',
     'LeaseTimeToLiveResponse',
     'PutRequest',
@@ -74,6 +93,8 @@ __all__ = [
     'RangeResponse',
     'RequestOp',
     'ResponseOp',
+    'StatusRequest',
+    'StatusResponse',
     'TxnRequest',
     'TxnResponse',
     'WatchCancelRequest',

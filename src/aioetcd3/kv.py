@@ -6,6 +6,8 @@ from typing import TypeAlias
 import grpc.aio
 
 from ._protobuf import (
+    CompactionRequest,
+    CompactionResponse,
     Compare,
     DeleteRangeRequest,
     DeleteRangeResponse,
@@ -72,6 +74,18 @@ class KVService(BaseService):
             prev_kv=prev_kv,
         )
         return await self._rpc(self._stub.DeleteRange, request, operation='KV.DeleteRange')
+
+    async def compact(self, revision: int, *, physical: bool = False) -> CompactionResponse:
+        """Compact the event history up to the given revision.
+
+        After compaction, any watch starting from a revision older than the
+        compacted one will receive a compacted-revision error.
+
+        With physical=True, the call blocks until the compaction is physically
+        applied to the backend (slower but guarantees storage reclaim).
+        """
+        request = CompactionRequest(revision=revision, physical=physical)
+        return await self._rpc(self._stub.Compact, request, operation='KV.Compact')
 
     async def txn(
         self,

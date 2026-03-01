@@ -33,7 +33,8 @@ This contract defines mandatory rules for `aioetcd3`.
 
 ## 5. Quality Contract
 
-- `ruff check .` must pass.
+- `ruff format .` must pass (auto-formats code).
+- `ruff check --fix .` must pass (linting).
 - `pyright` must pass.
 - `pytest` must pass.
 - New behavior should include focused tests.
@@ -53,3 +54,4 @@ Before merge, confirm:
 - Async behavior is preserved.
 - Typing and tests are updated.
 - Quality checks are green.
+- All `.md` files reviewed for consistency: module tables, ROADMAP status, and cross-references match the current implementation.

@@ -16,7 +16,7 @@ Read `CONTRACT.md` first.
 - Isolate gRPC logic in services/connections
 - Use strong typing and `TypeAlias` when helpful
 - Follow Pyright mode configured in `pyproject.toml`
-- `ruff`, `pyright`, and `pytest` must pass
+- `ruff format`, `ruff check --fix`, `pyright`, and `pytest` must all pass
 - Do not modify generated protobuf files
 - Keep backwards compatibility
 

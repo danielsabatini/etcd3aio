@@ -4,11 +4,13 @@
 
 ## Modules
 
-- `client.py`: lifecycle and service wiring (`Etcd3Client`)
+- `client.py`: lifecycle and service wiring (`Etcd3Client`); `lock()` / `election()` factories
 - `connections.py`: channel creation and connection options
 - `base.py`: shared unary RPC retry helper
-- `kv.py`: KV operations (put/get/delete)
-- `lease.py`: lease operations (grant/revoke/keep alive)
+- `kv.py`: KV operations (put/get/delete/compact/txn)
+- `lease.py`: lease operations (grant/revoke/time_to_live/keep_alive/leases)
+- `maintenance.py`: cluster status and alarm management
+- `concurrency.py`: distributed lock (`Lock`) and leader election (`Election`) built on KV + Lease
 - `watch.py`: watch stream with basic reconnect behavior
 - `_protobuf.py`: protobuf/stub aliases and import bootstrap
 - `errors.py`: library-level exceptions
