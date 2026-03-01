@@ -55,6 +55,127 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
+## Modules
+
+### KVService — `client.kv`
+
+Key-value operations: put, get, delete, compact, and atomic transactions.
+
+```python
+# Prefix scan with sorting
+from etcd3aio.kv import SortOrder, SortTarget, prefix_range_end
+
+resp = await client.kv.get(
+    'myapp/',
+    range_end=prefix_range_end('myapp/'),
+    sort_order=SortOrder.DESCEND,
+    sort_target=SortTarget.KEY,
+)
+
+# Compare-and-swap (atomic transaction)
+resp = await client.kv.txn(
+    compare=[client.kv.txn_compare_value('myapp/flag', 'off')],
+    success=[client.kv.txn_op_put('myapp/flag', 'on')],
+    failure=[client.kv.txn_op_get('myapp/flag')],
+)
+```
+
+### LeaseService — `client.lease`
+
+Lease lifecycle management with optional background keep-alive.
+
+```python
+# Grant a lease and attach a key to it
+lease = await client.lease.grant(ttl=30)
+await client.kv.put('myapp/lock', 'held', lease=lease.ID)
+
+# Automatic renewal in the background
+async with client.lease.keep_alive_context(lease.ID, ttl=30):
+    await do_long_work()  # lease is renewed automatically
+
+# Revoke when done
+await client.lease.revoke(lease.ID)
+```
+
+### WatchService — `client.watch`
+
+Async iterator over etcd events with automatic reconnection and server-side filtering.
+
+```python
+from etcd3aio.watch import WatchFilter
+from etcd3aio.kv import prefix_range_end
+
+# Watch a single key
+async for response in client.watch.watch('myapp/flag'):
+    for event in response.events:
+        print(event.type, event.kv.value.decode())
+
+# Watch a prefix, suppress DELETE events
+async for response in client.watch.watch(
+    'myapp/',
+    range_end=prefix_range_end('myapp/'),
+    filters=(WatchFilter.NODELETE,),
+):
+    ...
+```
+
+### Lock — `client.lock()`
+
+Distributed mutex built on KV + Lease. Guarantees mutual exclusion across processes.
+
+```python
+async with client.lock('myapp/resource', ttl=10):
+    # Only one holder at a time across the entire cluster
+    await do_exclusive_work()
+```
+
+### Election — `client.election()`
+
+Leader election built on KV + Lease. Supports campaign, resign, observe, proclaim, and leader query.
+
+```python
+async with client.election('myapp/leader', value=b'node-1', ttl=10) as e:
+    # This node is the leader
+    leader = await e.leader()
+    print(leader.kvs[0].value.decode())   # b'node-1'
+    await e.proclaim(b'node-1-updated')   # update published value
+
+# Stream leadership changes (useful for followers)
+async for response in client.election('myapp/leader').observe():
+    print('new leader event', response.events)
+```
+
+### AuthService — `client.auth`
+
+Developer-facing authentication: check auth status, obtain tokens, and auto-refresh.
+
+```python
+# Check if auth is enabled
+status = await client.auth.auth_status()
+
+# Authenticate and set token manually
+resp = await client.auth.authenticate('user', 'password')
+client.set_token(resp.token)
+
+# Or use the background refresher
+async with client.token_refresher('user', 'password'):
+    await client.kv.put('secure/key', 'value')
+```
+
+### MaintenanceService — `client.maintenance`
+
+Cluster health and alarm management.
+
+```python
+from etcd3aio.maintenance import AlarmType
+
+status = await client.maintenance.status()
+print(f'leader={status.leader}, version={status.version}')
+
+alarms = await client.maintenance.alarms()
+await client.maintenance.alarm_deactivate(AlarmType.NOSPACE)
+```
+
 ## Local cluster (Docker)
 
 ```bash
@@ -81,8 +202,7 @@ The [`examples/`](examples/) directory contains standalone scripts for every mod
 
 ## Documentation
 
-- [CONTRACT.md](CONTRACT.md) — non-negotiable project contract
+- [CONTRIBUTING.md](CONTRIBUTING.md) — local workflow, design principles and quality checks
 - [ARCHITECTURE.md](ARCHITECTURE.md) — module boundaries and responsibilities
-- [CONTRIBUTING.md](CONTRIBUTING.md) — local workflow and quality checks
 - [CHANGELOG.md](CHANGELOG.md) — version history
 - [ROADMAP.md](ROADMAP.md) — implemented and deferred features
