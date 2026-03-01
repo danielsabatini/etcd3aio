@@ -8,7 +8,7 @@ Read `CONTRIBUTING.md` first.
 
 ## Mandatory Rules
 
-- Python 3.13+
+- Python 3.11+
 - Async-first (never block the event loop)
 - Use `await` on gRPC calls where applicable
 - Maintain the facade pattern

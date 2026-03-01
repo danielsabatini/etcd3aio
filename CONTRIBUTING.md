@@ -22,7 +22,7 @@ uv run pytest               # tests
 
 - **Facade pattern** — `Etcd3Client` wires services; keep gRPC details isolated inside service modules.
 - **Async-first** — never block the event loop; all gRPC calls must be `await`ed.
-- **Python 3.13+** — use modern syntax; no compatibility shims for older versions.
+- **Python 3.11+** — use modern syntax; no compatibility shims for older versions.
 - **Strong typing** — all public API must be fully annotated and satisfy `pyright` in basic mode.
 - **Backward compatibility** — prefer additive changes; breaking changes require explicit planning.
 - **Lightweight client** — no hidden magic, no heavy frameworks, no unnecessary abstractions.

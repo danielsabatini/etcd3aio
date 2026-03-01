@@ -1,9 +1,9 @@
 [project]
 name = "etcd3aio"
 version = "0.1.0"
-description = "Async Python client for etcd v3 (grpc.aio, Python 3.13+)"
+description = "Async Python client for etcd v3 (grpc.aio, Python 3.11+)"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 license = { file = "LICENSE" }
 authors = [{ name = "dsfreitas" }]
 keywords = ["etcd", "etcd3", "asyncio", "grpc", "distributed"]
@@ -12,6 +12,8 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Database",
     "Topic :: System :: Distributed Computing",
@@ -49,7 +51,7 @@ where = ["src"]
 etcd3aio = ["py.typed"]
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py311"
 line-length = 100
 src = ["src", "tests"]
 exclude = ["build", "dist", "__pycache__", "*.egg-info", ".venv", "src/etcd3aio/proto"]
@@ -64,7 +66,7 @@ select = ["E", "W", "F", "I", "PL", "PT"]
 quote-style = "single"
 
 [tool.pyright]
-pythonVersion = "3.13"
+pythonVersion = "3.11"
 typeCheckingMode = "basic"
 include = ["src", "tests"]
 extraPaths = ["src"]

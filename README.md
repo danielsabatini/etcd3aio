@@ -4,7 +4,7 @@ Async Python client for etcd v3 using `grpc.aio`.
 
 [![CI](https://github.com/dsfreitas/etcd3aio/actions/workflows/ci.yml/badge.svg)](https://github.com/dsfreitas/etcd3aio/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/etcd3aio)](https://pypi.org/project/etcd3aio/)
-[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## Features
@@ -19,7 +19,7 @@ Async Python client for etcd v3 using `grpc.aio`.
 
 ## Requirements
 
-- Python 3.13+
+- Python 3.11+
 - etcd v3.5+ (see [Local cluster](#local-cluster-docker) to run one locally)
 
 ## Installation

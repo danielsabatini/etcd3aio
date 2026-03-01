@@ -8,7 +8,7 @@ This document provides a comprehensive overview of the `etcd3aio` project for AI
 
 **Core Technologies:**
 
-- **Python 3.13+**
+- **Python 3.11+**
 - **gRPC (`grpc.aio`)**: for async communication with etcd
 - **etcd v3**
 

@@ -74,7 +74,7 @@ All generated proto stubs live in `src/etcd3aio/proto/`. **Never modify these fi
 
 ## Key Invariants
 
-- **Python 3.13+** only — use modern typing syntax
+- **Python 3.11+** only — use modern typing syntax
 - **Async-first** — never block the event loop, always `await` gRPC calls
 - **Facade pattern** — keep gRPC details isolated inside service modules
 - **Strong typing** — use `TypeAlias` and satisfy `pyright` in basic mode

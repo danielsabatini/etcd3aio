@@ -12,7 +12,7 @@ This contract defines the mandatory rules for `etcd3aio`.
 
 ## 2. Execution Contract
 
-- Python 3.13+ only.
+- Python 3.11+ only.
 - Never block the asyncio event loop.
 - Prefer async APIs end-to-end.
 - All gRPC calls must be awaited with `await` where applicable.
