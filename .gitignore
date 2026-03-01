@@ -93,7 +93,7 @@ Desktop.ini
 *.swo
 *.log
 temp_proto/
-dicas.txt
+# dicas.txt
 
 # =========================
 # AI Agents / internal docs (uncomment when ready to stop tracking)
