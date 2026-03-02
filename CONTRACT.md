@@ -40,6 +40,7 @@ This contract defines the mandatory rules for `etcd3aio`.
 - `pyright` must pass.
 - `pytest` must pass.
 - New behaviours must include focused tests.
+- SonarQube must pass on server http://localhost:9000.
 
 ## 6. Documentation Contract
 
