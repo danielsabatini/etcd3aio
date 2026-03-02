@@ -16,6 +16,7 @@ from .maintenance import MaintenanceService
 from .watch import WatchService
 
 _PING_KEY = '__etcd3aio:ping__'
+_ERR_NOT_CONNECTED = 'client is not connected'
 
 
 class Etcd3Client:
@@ -95,7 +96,7 @@ class Etcd3Client:
         detecting quorum loss in multi-node clusters.
         """
         if self.kv is None or self.lease is None:
-            raise RuntimeError('client is not connected')
+            raise RuntimeError(_ERR_NOT_CONNECTED)
 
         await self.kv.get(_PING_KEY)
 
@@ -132,19 +133,19 @@ class Etcd3Client:
         Must be connected before calling this method.
         """
         if self.auth is None:
-            raise RuntimeError('client is not connected')
+            raise RuntimeError(_ERR_NOT_CONNECTED)
         return TokenRefresher(self.auth, self.set_token, name, password, interval=interval)
 
     def lock(self, name: str, *, ttl: int = 30) -> Lock:
         """Return a distributed lock for *name*. Must be used as an async context manager."""
         if self.kv is None or self.lease is None or self.watch is None:
-            raise RuntimeError('client is not connected')
+            raise RuntimeError(_ERR_NOT_CONNECTED)
         return Lock(self.kv, self.lease, self.watch, name, ttl=ttl)
 
     def election(self, name: str, *, value: bytes = b'', ttl: int = 30) -> Election:
         """Return a leader election for *name*. Must be used as an async context manager."""
         if self.kv is None or self.lease is None or self.watch is None:
-            raise RuntimeError('client is not connected')
+            raise RuntimeError(_ERR_NOT_CONNECTED)
         return Election(self.kv, self.lease, self.watch, name, value=value, ttl=ttl)
 
     async def __aenter__(self) -> Etcd3Client:

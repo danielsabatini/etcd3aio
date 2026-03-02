@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from .auth import TokenRefresher
+from .auth import PermissionType, TokenRefresher
 from .client import Etcd3Client
 from .concurrency import Election, Lock
 from .errors import (
@@ -30,6 +30,7 @@ __all__ = [
     'EtcdUnauthenticatedError',
     'LeaseKeepalive',
     'Lock',
+    'PermissionType',
     'SortOrder',
     'SortTarget',
     'TokenRefresher',

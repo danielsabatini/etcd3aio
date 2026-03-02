@@ -38,6 +38,11 @@ pyright
 
 # Start local etcd cluster (3 nodes)
 docker compose -f docker/docker-compose.yaml up -d
+
+# SonarQube analysis (requires local server at http://localhost:9000)
+# Token is stored in .env (git-ignored); load it before running:
+uv run pytest --cov=src/etcd3aio --cov-report=xml:coverage.xml -q
+source .env && sonar-scanner
 ```
 
 ## Architecture
@@ -51,8 +56,8 @@ docker compose -f docker/docker-compose.yaml up -d
 | `base.py` | `BaseService` — shared retry/backoff for unary RPC; `set_token()` for gRPC metadata |
 | `kv.py` | `KVService` — put/get/delete/compact/txn; `SortOrder`, `SortTarget` enums; `prefix_range_end()`; `txn_compare_create_revision()` for "key doesn't exist" idiom |
 | `lease.py` | `LeaseService` — grant/revoke/leases/keep_alive; `LeaseKeepalive` background context manager |
-| `maintenance.py` | `MaintenanceService` — status/alarms/alarm_deactivate; `AlarmType` enum |
-| `auth.py` | `AuthService` — auth_status/authenticate; `TokenRefresher` background context manager for token refresh |
+| `maintenance.py` | `MaintenanceService` — status/alarms/alarm_deactivate/defragment/hash_kv/move_leader/snapshot; `AlarmType` enum |
+| `auth.py` | `AuthService` — full Auth API: auth_status/authenticate/auth_enable/auth_disable; user_*/role_* management; `PermissionType` enum; `TokenRefresher` background context manager for token refresh |
 | `concurrency.py` | `Lock`, `Election` — distributed lock and leader election built on KV + Lease; `Election` exposes `leader()`, `proclaim()`, `observe()` beyond Campaign/Resign |
 | `watch.py` | `WatchService` — async iterator with automatic reconnection; `WatchFilter` enum |
 | `errors.py` | `EtcdError`, `EtcdConnectionError`, `EtcdTransientError`, `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError` |

@@ -21,8 +21,12 @@ Read `CONTRIBUTING.md` first.
 - Maintain backward compatibility
 
 ## References
-- asyncio: https://docs.python.org/3/howto/asyncio.html
-- A Conceptual Overview of asyncio: https://docs.python.org/3/library/asyncio-task.html#conceptual-overview
+### Python
+- A Conceptual Overview of asyncio: https://docs.python.org/3/howto/a-conceptual-overview-of-asyncio.html#a-conceptual-overview-of-asyncio
+- asyncio: https://docs.python.org/3/library/asyncio.html#module-asyncio
+- Configuring Logging for a Library: https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
+
+### etcd3
 - Discovery protocol: https://etcd.io/docs/v3.6/dev-guide/discovery_protocol/
 - Setting up a local cluster: https://etcd.io/docs/v3.6/dev-guide/local_cluster/
 - Interacting with etcd: https://etcd.io/docs/v3.6/dev-guide/interacting_v3/
@@ -32,4 +36,3 @@ Read `CONTRIBUTING.md` first.
 - etcd features: https://etcd.io/docs/v3.6/dev-guide/features/
 - API reference: https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/
 - API reference — concurrency: https://etcd.io/docs/v3.6/dev-guide/api_concurrency_reference_v3/
-- Configuring Logging for a Library: https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library

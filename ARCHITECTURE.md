@@ -9,8 +9,8 @@
 - `base.py`: shared retry/backoff helper for unary RPCs; per-call `asyncio.timeout()`; maps `UNAUTHENTICATED` → `EtcdUnauthenticatedError`, `PERMISSION_DENIED` → `EtcdPermissionDeniedError`; `set_token()` injects auth token as gRPC metadata
 - `kv.py`: KV operations (put/get/delete/compact/txn); `SortOrder` / `SortTarget` enums; `prefix_range_end()` utility; `txn_compare_create_revision()` for the "key does not exist" idiom
 - `lease.py`: lease operations (grant/revoke/time_to_live/keep_alive/leases); `LeaseKeepalive` async context manager for background keepalive
-- `auth.py`: developer-facing auth — `auth_status()` / `authenticate()`; `TokenRefresher` async context manager for automatic token renewal
-- `maintenance.py`: cluster status and alarm management; `AlarmType` enum
+- `auth.py`: full Auth API — `auth_status()` / `authenticate()` / `auth_enable()` / `auth_disable()`; user management (`user_add/get/list/delete/change_password/grant_role/revoke_role`); role management (`role_add/get/list/delete/grant_permission/revoke_permission`); `PermissionType` enum; `TokenRefresher` async context manager for automatic token renewal
+- `maintenance.py`: cluster status and alarm management (`status`, `alarms`, `alarm_deactivate`); `defragment()`; `hash_kv()`; `move_leader()`; `snapshot()` async generator for binary backup streaming; `AlarmType` enum
 - `concurrency.py`: distributed lock (`Lock`) and leader election (`Election`) built on KV + Lease; `Election` exposes `leader()`, `proclaim()` and `observe()` beyond the Campaign/Resign lifecycle
 - `watch.py`: watch stream with automatic reconnection and revision tracking; `WatchFilter` enum for server-side event filtering
 - `_protobuf.py`: protobuf/stub type aliases and import bootstrap

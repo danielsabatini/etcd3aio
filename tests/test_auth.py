@@ -6,8 +6,26 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import grpc
 import pytest
 
-from etcd3aio._protobuf import AuthenticateResponse, AuthStatusResponse
-from etcd3aio.auth import AuthService, TokenRefresher
+from etcd3aio._protobuf import (
+    AuthDisableResponse,
+    AuthEnableResponse,
+    AuthenticateResponse,
+    AuthRoleAddResponse,
+    AuthRoleDeleteResponse,
+    AuthRoleGetResponse,
+    AuthRoleGrantPermissionResponse,
+    AuthRoleListResponse,
+    AuthRoleRevokePermissionResponse,
+    AuthStatusResponse,
+    AuthUserAddResponse,
+    AuthUserChangePasswordResponse,
+    AuthUserDeleteResponse,
+    AuthUserGetResponse,
+    AuthUserGrantRoleResponse,
+    AuthUserListResponse,
+    AuthUserRevokeRoleResponse,
+)
+from etcd3aio.auth import AuthService, PermissionType, TokenRefresher
 from etcd3aio.errors import EtcdPermissionDeniedError, EtcdUnauthenticatedError
 from etcd3aio.kv import KVService
 
@@ -268,3 +286,295 @@ async def test_token_refresher_handles_reauth_failure_gracefully() -> None:
             await refresher._run()
 
     assert tokens_set == []  # set_token never called because both attempts failed
+
+
+# ---------------------------------------------------------------------------
+# auth_enable / auth_disable
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_auth_enable_returns_response() -> None:
+    response = AuthEnableResponse()
+    stub = MagicMock()
+    stub.AuthEnable = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.auth_enable()
+
+    assert result is response
+    stub.AuthEnable.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_auth_disable_returns_response() -> None:
+    response = AuthDisableResponse()
+    stub = MagicMock()
+    stub.AuthDisable = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.auth_disable()
+
+    assert result is response
+    stub.AuthDisable.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# User management
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_user_add_sends_name_and_password() -> None:
+    response = AuthUserAddResponse()
+    stub = MagicMock()
+    stub.UserAdd = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.user_add('alice', 'secret')
+
+    assert result is response
+    request = stub.UserAdd.await_args.args[0]
+    assert request.name == 'alice'
+    assert request.password == 'secret'
+    assert not request.options.no_password
+
+
+@pytest.mark.asyncio
+async def test_user_add_no_password_sets_option() -> None:
+    stub = MagicMock()
+    stub.UserAdd = AsyncMock(return_value=AuthUserAddResponse())
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        await service.user_add('svc-account', '', no_password=True)
+
+    request = stub.UserAdd.await_args.args[0]
+    assert request.options.no_password is True
+
+
+@pytest.mark.asyncio
+async def test_user_get_sends_name() -> None:
+    response = AuthUserGetResponse(roles=['admin', 'viewer'])
+    stub = MagicMock()
+    stub.UserGet = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.user_get('alice')
+
+    assert result is response
+    request = stub.UserGet.await_args.args[0]
+    assert request.name == 'alice'
+
+
+@pytest.mark.asyncio
+async def test_user_list_returns_response() -> None:
+    response = AuthUserListResponse(users=['alice', 'bob'])
+    stub = MagicMock()
+    stub.UserList = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.user_list()
+
+    assert result is response
+    assert list(result.users) == ['alice', 'bob']
+
+
+@pytest.mark.asyncio
+async def test_user_delete_sends_name() -> None:
+    response = AuthUserDeleteResponse()
+    stub = MagicMock()
+    stub.UserDelete = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.user_delete('alice')
+
+    assert result is response
+    request = stub.UserDelete.await_args.args[0]
+    assert request.name == 'alice'
+
+
+@pytest.mark.asyncio
+async def test_user_change_password_sends_name_and_password() -> None:
+    response = AuthUserChangePasswordResponse()
+    stub = MagicMock()
+    stub.UserChangePassword = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.user_change_password('alice', 'new-secret')
+
+    assert result is response
+    request = stub.UserChangePassword.await_args.args[0]
+    assert request.name == 'alice'
+    assert request.password == 'new-secret'
+
+
+@pytest.mark.asyncio
+async def test_user_grant_role_sends_user_and_role() -> None:
+    response = AuthUserGrantRoleResponse()
+    stub = MagicMock()
+    stub.UserGrantRole = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.user_grant_role('alice', 'admin')
+
+    assert result is response
+    request = stub.UserGrantRole.await_args.args[0]
+    assert request.user == 'alice'
+    assert request.role == 'admin'
+
+
+@pytest.mark.asyncio
+async def test_user_revoke_role_sends_name_and_role() -> None:
+    response = AuthUserRevokeRoleResponse()
+    stub = MagicMock()
+    stub.UserRevokeRole = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.user_revoke_role('alice', 'admin')
+
+    assert result is response
+    request = stub.UserRevokeRole.await_args.args[0]
+    assert request.name == 'alice'
+    assert request.role == 'admin'
+
+
+# ---------------------------------------------------------------------------
+# Role management
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_role_add_sends_name() -> None:
+    response = AuthRoleAddResponse()
+    stub = MagicMock()
+    stub.RoleAdd = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.role_add('admin')
+
+    assert result is response
+    request = stub.RoleAdd.await_args.args[0]
+    assert request.name == 'admin'
+
+
+@pytest.mark.asyncio
+async def test_role_get_returns_permissions() -> None:
+    response = AuthRoleGetResponse()
+    stub = MagicMock()
+    stub.RoleGet = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.role_get('admin')
+
+    assert result is response
+    request = stub.RoleGet.await_args.args[0]
+    assert request.role == 'admin'
+
+
+@pytest.mark.asyncio
+async def test_role_list_returns_response() -> None:
+    response = AuthRoleListResponse(roles=['admin', 'viewer'])
+    stub = MagicMock()
+    stub.RoleList = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.role_list()
+
+    assert result is response
+    assert list(result.roles) == ['admin', 'viewer']
+
+
+@pytest.mark.asyncio
+async def test_role_delete_sends_role() -> None:
+    response = AuthRoleDeleteResponse()
+    stub = MagicMock()
+    stub.RoleDelete = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.role_delete('admin')
+
+    assert result is response
+    request = stub.RoleDelete.await_args.args[0]
+    assert request.role == 'admin'
+
+
+@pytest.mark.asyncio
+async def test_role_grant_permission_single_key() -> None:
+    response = AuthRoleGrantPermissionResponse()
+    stub = MagicMock()
+    stub.RoleGrantPermission = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.role_grant_permission(
+            'admin', '/config/db', perm_type=PermissionType.READWRITE
+        )
+
+    assert result is response
+    request = stub.RoleGrantPermission.await_args.args[0]
+    assert request.name == 'admin'
+    assert request.perm.key == b'/config/db'
+    assert request.perm.range_end == b''
+    assert request.perm.permType == PermissionType.READWRITE
+
+
+@pytest.mark.asyncio
+async def test_role_grant_permission_range() -> None:
+    stub = MagicMock()
+    stub.RoleGrantPermission = AsyncMock(return_value=AuthRoleGrantPermissionResponse())
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        await service.role_grant_permission(
+            'viewer', b'/logs/', b'/logs0', perm_type=PermissionType.READ
+        )
+
+    request = stub.RoleGrantPermission.await_args.args[0]
+    assert request.perm.key == b'/logs/'
+    assert request.perm.range_end == b'/logs0'
+    assert request.perm.permType == PermissionType.READ
+
+
+@pytest.mark.asyncio
+async def test_role_revoke_permission_sends_role_and_key() -> None:
+    response = AuthRoleRevokePermissionResponse()
+    stub = MagicMock()
+    stub.RoleRevokePermission = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        result = await service.role_revoke_permission('admin', '/config/db')
+
+    assert result is response
+    request = stub.RoleRevokePermission.await_args.args[0]
+    assert request.role == 'admin'
+    assert request.key == b'/config/db'
+    assert request.range_end == b''
+
+
+@pytest.mark.asyncio
+async def test_role_revoke_permission_with_range() -> None:
+    stub = MagicMock()
+    stub.RoleRevokePermission = AsyncMock(return_value=AuthRoleRevokePermissionResponse())
+
+    with patch('etcd3aio.auth.AuthStub', return_value=stub):
+        service = AuthService(channel=MagicMock())
+        await service.role_revoke_permission('viewer', b'/logs/', b'/logs0')
+
+    request = stub.RoleRevokePermission.await_args.args[0]
+    assert request.key == b'/logs/'
+    assert request.range_end == b'/logs0'

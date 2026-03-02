@@ -4,7 +4,7 @@ Async Python client for etcd v3 using `grpc.aio`.
 
 [![CI](https://github.com/dsfreitas/etcd3aio/actions/workflows/ci.yml/badge.svg)](https://github.com/dsfreitas/etcd3aio/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/etcd3aio)](https://pypi.org/project/etcd3aio/)
-[![Python 3.11+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## Features
@@ -151,7 +151,7 @@ async for response in client.election('myapp/leader').observe():
 
 ### AuthService — `client.auth`
 
-Developer-facing authentication: check auth status, obtain tokens, and auto-refresh.
+Full authentication and RBAC management: auth enable/disable, user and role lifecycle, token refresh.
 
 ```python
 # Check if auth is enabled
@@ -161,14 +161,29 @@ status = await client.auth.auth_status()
 resp = await client.auth.authenticate('user', 'password')
 client.set_token(resp.token)
 
-# Or use the background refresher
+# Or use the background refresher (re-authenticates before expiry)
 async with client.token_refresher('user', 'password'):
     await client.kv.put('secure/key', 'value')
+
+# Enable / disable auth (requires root credentials)
+await client.auth.auth_enable()
+await client.auth.auth_disable()
+
+# User and role management (RBAC)
+from etcd3aio import PermissionType
+from etcd3aio.kv import prefix_range_end
+
+await client.auth.role_add('viewer')
+await client.auth.role_grant_permission(
+    'viewer', '/app/', prefix_range_end('/app/'), perm_type=PermissionType.READ
+)
+await client.auth.user_add('alice', 'secret')
+await client.auth.user_grant_role('alice', 'viewer')
 ```
 
 ### MaintenanceService — `client.maintenance`
 
-Cluster health and alarm management.
+Cluster health, alarm management, storage defragmentation, consistency hashing, and snapshot streaming.
 
 ```python
 from etcd3aio.maintenance import AlarmType
@@ -178,6 +193,19 @@ print(f'leader={status.leader}, version={status.version}')
 
 alarms = await client.maintenance.alarms()
 await client.maintenance.alarm_deactivate(AlarmType.NOSPACE)
+
+# Reclaim storage freed by compaction
+await client.maintenance.defragment()
+
+# Consistency check between members
+hkv = await client.maintenance.hash_kv()
+print(f'hash={hkv.hash:#010x}, revision={hkv.hash_revision}')
+
+# Stream a full binary backup
+chunks: list[bytes] = []
+async for chunk in client.maintenance.snapshot():
+    chunks.append(chunk)
+data = b''.join(chunks)
 ```
 
 ### Multi-endpoint & TLS
@@ -218,8 +246,8 @@ The [`examples/`](examples/) directory contains standalone scripts for every mod
 | `watch_example.py` | basic watch, filters, prefix range |
 | `txn_example.py` | compare-and-swap, atomic ops |
 | `concurrency_example.py` | distributed lock, leader election |
-| `auth_example.py` | auth status, token management |
-| `maintenance_example.py` | cluster status, alarms |
+| `auth_example.py` | auth status, token management, user/role management |
+| `maintenance_example.py` | cluster status, alarms, defragment, hash_kv, snapshot |
 | `full_example.py` | integrated end-to-end demo |
 
 ## Documentation

@@ -18,10 +18,15 @@ def parse_args() -> argparse.Namespace:
         default=['localhost:2379'],
         help='List of etcd endpoints in host:port format.',
     )
+    parser.add_argument(
+        '--snapshot',
+        action='store_true',
+        help='Stream a snapshot from the cluster and print its total size.',
+    )
     return parser.parse_args()
 
 
-async def run_maintenance_example(maintenance: MaintenanceService) -> None:
+async def run_maintenance_example(maintenance: MaintenanceService, *, snapshot: bool) -> None:
     # Cluster member status
     status = await maintenance.status()
     print(
@@ -40,6 +45,25 @@ async def run_maintenance_example(maintenance: MaintenanceService) -> None:
     await maintenance.alarm_deactivate(AlarmType.NOSPACE)
     print('alarm_deactivate(NOSPACE) -> ok')
 
+    # Defragment the backend database of the connected member
+    await maintenance.defragment()
+    print('defragment() -> ok')
+
+    # Hash the KV store at the latest revision for consistency checks
+    hkv = await maintenance.hash_kv()
+    print(
+        f'hash_kv() -> hash={hkv.hash:#010x}, '
+        f'compact_revision={hkv.compact_revision}, '
+        f'hash_revision={hkv.hash_revision}'
+    )
+
+    # Stream a binary snapshot (optional — large clusters can produce large snapshots)
+    if snapshot:
+        total = 0
+        async for chunk in maintenance.snapshot():
+            total += len(chunk)
+        print(f'snapshot() -> received {total} bytes')
+
 
 async def main() -> None:
     args = parse_args()
@@ -49,7 +73,7 @@ async def main() -> None:
         if maintenance is None:
             raise RuntimeError('maintenance service is not initialized')
 
-        await run_maintenance_example(maintenance)
+        await run_maintenance_example(maintenance, snapshot=args.snapshot)
 
 
 if __name__ == '__main__':

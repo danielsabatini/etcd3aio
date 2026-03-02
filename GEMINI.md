@@ -4,7 +4,7 @@ This document provides a comprehensive overview of the `etcd3aio` project for AI
 
 ## Project Overview
 
-`etcd3aio` is an async Python client library for etcd v3. It uses `grpc.aio` for communication with the etcd cluster and provides a simple, high-level facade for interacting with etcd services such as Key-Value, Lease, and Watch.
+`etcd3aio` is an async Python client library for etcd v3. It uses `grpc.aio` for communication with the etcd cluster and provides a simple, high-level facade for interacting with all etcd v3 services: Key-Value, Lease, Watch, Auth (full RBAC), Maintenance, and distributed concurrency primitives (Lock, Election).
 
 **Core Technologies:**
 
@@ -14,7 +14,7 @@ This document provides a comprehensive overview of the `etcd3aio` project for AI
 
 **Architecture:**
 
-The project is structured as a standard Python library with source code under `src/etcd3aio`. It is divided into modules, each corresponding to a specific etcd service (e.g. `kv.py`, `lease.py`, `watch.py`). The main entry point is the `Etcd3Client` class in `src/etcd3aio/client.py`, which acts as a facade for all services.
+The project is structured as a standard Python library with source code under `src/etcd3aio`. It is divided into modules, each corresponding to a specific etcd service (`kv.py`, `lease.py`, `watch.py`, `auth.py`, `maintenance.py`, `concurrency.py`). The main entry point is the `Etcd3Client` class in `src/etcd3aio/client.py`, which acts as a facade for all services.
 
 The project uses `setuptools` for packaging, `pytest` for testing, `ruff` for linting and formatting, and `pyright` for static type checking.
 
