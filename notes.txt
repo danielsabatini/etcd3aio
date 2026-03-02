@@ -58,3 +58,7 @@ find docker src tests -type f \( -name "*.py" -o -name "*.yaml" -o -name "*.toml
 sonar
 squ_1212fa9e856dfc74e40c7858260553517b942b54
 sonar-scanner -Dsonar.token=squ_1212fa9e856dfc74e40c7858260553517b942b54
+
+sonar server proxmox
+squ_9fd28be994369427d7dd12cb12c47676c29c85a8
+sonar-scanner -Dsonar.token=squ_9fd28be994369427d7dd12cb12c47676c29c85a8
