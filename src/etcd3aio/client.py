@@ -47,7 +47,8 @@ class Etcd3Client:
 
     async def connect(self) -> None:
         """Initializes channel and service facades."""
-        self._channel = await self._manager.get_channel(**self._conn_args)
+        self._channel = self._manager.get_channel(**self._conn_args)
+        await self._channel.channel_ready()
         self.auth = AuthService(self._channel, max_attempts=self._rpc_max_attempts)
         self.kv = KVService(self._channel, max_attempts=self._rpc_max_attempts)
         self.lease = LeaseService(self._channel, max_attempts=self._rpc_max_attempts)

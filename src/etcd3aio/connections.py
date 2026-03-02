@@ -33,7 +33,7 @@ class ConnectionManager:
             ('grpc.enable_retries', 1),
         ]
 
-    async def get_channel(
+    def get_channel(
         self,
         ca_cert: bytes | None = None,
         cert_key: bytes | None = None,
