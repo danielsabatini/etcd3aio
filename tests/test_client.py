@@ -12,7 +12,7 @@ from etcd3aio.errors import EtcdConnectionError
 @pytest.mark.asyncio
 async def test_connect_initializes_services() -> None:
     channel = AsyncMock()
-    get_channel_mock = AsyncMock(return_value=channel)
+    get_channel_mock = MagicMock(return_value=channel)
 
     auth_service = MagicMock()
     kv_service = MagicMock()
@@ -50,7 +50,7 @@ async def test_connect_initializes_services() -> None:
 @pytest.mark.asyncio
 async def test_async_context_manager_lifecycle() -> None:
     channel = AsyncMock()
-    get_channel_mock = AsyncMock(return_value=channel)
+    get_channel_mock = MagicMock(return_value=channel)
 
     kv_service = MagicMock()
     lease_service = MagicMock()
@@ -83,7 +83,7 @@ async def test_ping_performs_read_and_write_check() -> None:
 
     with (
         patch(
-            'etcd3aio.client.ConnectionManager.get_channel', new=AsyncMock(return_value=AsyncMock())
+            'etcd3aio.client.ConnectionManager.get_channel', new=MagicMock(return_value=AsyncMock())
         ),
         patch('etcd3aio.client.AuthService', return_value=MagicMock()),
         patch('etcd3aio.client.KVService', return_value=kv),
@@ -109,7 +109,7 @@ async def test_ping_read_only_skips_write() -> None:
 
     with (
         patch(
-            'etcd3aio.client.ConnectionManager.get_channel', new=AsyncMock(return_value=AsyncMock())
+            'etcd3aio.client.ConnectionManager.get_channel', new=MagicMock(return_value=AsyncMock())
         ),
         patch('etcd3aio.client.AuthService', return_value=MagicMock()),
         patch('etcd3aio.client.KVService', return_value=kv),
@@ -135,7 +135,7 @@ async def test_ping_revoke_suppressed_on_write_failure() -> None:
 
     with (
         patch(
-            'etcd3aio.client.ConnectionManager.get_channel', new=AsyncMock(return_value=AsyncMock())
+            'etcd3aio.client.ConnectionManager.get_channel', new=MagicMock(return_value=AsyncMock())
         ),
         patch('etcd3aio.client.AuthService', return_value=MagicMock()),
         patch('etcd3aio.client.KVService', return_value=kv),
@@ -173,7 +173,7 @@ async def test_token_param_applies_to_all_services_on_connect() -> None:
 
     with (
         patch(
-            'etcd3aio.client.ConnectionManager.get_channel', new=AsyncMock(return_value=AsyncMock())
+            'etcd3aio.client.ConnectionManager.get_channel', new=MagicMock(return_value=AsyncMock())
         ),
         patch('etcd3aio.client.AuthService', return_value=auth_service),
         patch('etcd3aio.client.KVService', return_value=kv_service),
@@ -199,7 +199,7 @@ async def test_set_token_propagates_to_all_active_services() -> None:
 
     with (
         patch(
-            'etcd3aio.client.ConnectionManager.get_channel', new=AsyncMock(return_value=AsyncMock())
+            'etcd3aio.client.ConnectionManager.get_channel', new=MagicMock(return_value=AsyncMock())
         ),
         patch('etcd3aio.client.AuthService', return_value=auth_service),
         patch('etcd3aio.client.KVService', return_value=kv_service),
@@ -224,7 +224,7 @@ async def test_token_refresher_factory_returns_refresher() -> None:
     """client.token_refresher() returns a TokenRefresher bound to the auth service."""
     with (
         patch(
-            'etcd3aio.client.ConnectionManager.get_channel', new=AsyncMock(return_value=AsyncMock())
+            'etcd3aio.client.ConnectionManager.get_channel', new=MagicMock(return_value=AsyncMock())
         ),
         patch('etcd3aio.client.AuthService', return_value=MagicMock()),
         patch('etcd3aio.client.KVService', return_value=MagicMock()),
