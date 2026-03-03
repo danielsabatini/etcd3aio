@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from importlib.metadata import version
 
 from .auth import PermissionType, TokenRefresher
 from .client import Etcd3Client
@@ -17,9 +18,12 @@ from .lease import LeaseKeepalive
 from .maintenance import AlarmType, DowngradeAction
 from .watch import WatchFilter
 
+__version__ = version(__name__)
+
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 __all__ = [
+    '__version__',
     'AlarmType',
     'DowngradeAction',
     'Election',
