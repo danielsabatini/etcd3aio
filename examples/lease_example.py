@@ -3,10 +3,14 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
+from typing import cast
 
+from etcd3aio._protobuf import WatchResponse
 from etcd3aio.client import Etcd3Client
 from etcd3aio.kv import KVService
 from etcd3aio.lease import LeaseService
+from etcd3aio.watch import WatchService
 
 logging.basicConfig(level=logging.WARNING, format='%(levelname)s:%(name)s: %(message)s')
 
@@ -58,17 +62,44 @@ async def run_lease_example(kv: KVService, lease: LeaseService, ttl: int) -> Non
     print('Lease revoke -> ok')
 
 
+async def run_watch_on_expire(kv: KVService, lease: LeaseService, watch: WatchService) -> None:
+    """Grant a short-lived lease, attach a key and watch for the auto-DELETE on expiry."""
+    ttl = 4
+    key = 'example:lease:expiry-watch'
+
+    expire_resp = await lease.grant(ttl=ttl)
+    expire_id = expire_resp.ID
+    print(f'\nLease grant (expiry demo) -> lease_id={expire_id}, ttl={ttl}s')
+
+    await kv.put(key, 'will-expire', lease=expire_id)
+    print(f'Watching {key!r} — waiting up to {ttl + 5}s for natural expiry...')
+
+    watch_gen = cast(AsyncGenerator[WatchResponse, None], watch.watch(key))
+    try:
+        while True:
+            response = await asyncio.wait_for(anext(watch_gen), timeout=ttl + 5)
+            if response.events:
+                event = response.events[0]
+                # EventType: 0=PUT, 1=DELETE
+                print(f'Watch on expire -> type={event.type} (DELETE), key={event.kv.key.decode()}')
+                break
+    finally:
+        await watch_gen.aclose()
+
+
 async def main() -> None:
     args = parse_args()
 
     async with Etcd3Client(args.endpoints) as client:
         kv = client.kv
         lease = client.lease
+        watch = client.watch
 
-        if kv is None or lease is None:
-            raise RuntimeError('kv or lease service is not initialized')
+        if kv is None or lease is None or watch is None:
+            raise RuntimeError('kv, lease or watch service is not initialized')
 
         await run_lease_example(kv, lease, ttl=args.ttl)
+        await run_watch_on_expire(kv, lease, watch)
 
 
 if __name__ == '__main__':

@@ -31,7 +31,7 @@ def parse_args() -> argparse.Namespace:
 
 async def check_endpoint(endpoint: str, timeout: float) -> bool:
     manager = ConnectionManager([endpoint])
-    channel = await manager.get_channel()
+    channel = manager.get_channel()
 
     try:
         await asyncio.wait_for(channel.channel_ready(), timeout=timeout)
@@ -85,4 +85,8 @@ async def main() -> None:
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except RuntimeError as exc:
+        print(f'Error: {exc}')
+        raise SystemExit(1) from None
