@@ -49,6 +49,7 @@ class _Semaphore:
         self._lease_id: int | None = None
 
     async def _acquire(self) -> None:
+        """Acquire the semaphore slot using the etcd linearizable locking protocol."""
         lease_resp = await self._lease.grant(ttl=self._ttl)
         lease_id: int = int(lease_resp.ID)
         self._lease_id = lease_id
@@ -77,6 +78,7 @@ class _Semaphore:
                     break  # predecessor gone — re-check who's first
 
     async def _release(self) -> None:
+        """Release the semaphore by deleting the etcd key and revoking the lease."""
         if self._my_key is not None:
             with contextlib.suppress(EtcdError):
                 await self._kv.delete(self._my_key)

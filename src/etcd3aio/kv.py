@@ -82,6 +82,18 @@ class KVService(BaseService):
         *,
         timeout: float | None = None,
     ) -> PutResponse:
+        """Store *key* with the given *value*.
+
+        Args:
+            key: Key name (UTF-8 string or bytes).
+            value: Value to store (UTF-8 string or bytes).
+            lease: Lease ID to attach to the key (0 = no lease).
+            prev_kv: If ``True``, return the previous key-value in the response.
+            timeout: Per-call deadline in seconds (``None`` = no deadline).
+
+        Returns:
+            ``PutResponse`` — ``prev_kv`` is populated only when *prev_kv* is ``True``.
+        """
         request = PutRequest(
             key=self._to_bytes(key),
             value=self._to_bytes(value),
@@ -141,6 +153,19 @@ class KVService(BaseService):
         *,
         timeout: float | None = None,
     ) -> DeleteRangeResponse:
+        """Delete a single key or a key range.
+
+        Args:
+            key: Key to delete.  Use with *range_end* for range/prefix deletions.
+            range_end: Exclusive upper bound for a range deletion.  Pass the result
+                of :func:`prefix_range_end` to delete all keys under a prefix.
+            prev_kv: If ``True``, include the deleted key-value pairs in the response.
+            timeout: Per-call deadline in seconds (``None`` = no deadline).
+
+        Returns:
+            ``DeleteRangeResponse`` — ``deleted`` is the number of keys removed;
+            ``prev_kvs`` is populated only when *prev_kv* is ``True``.
+        """
         request = DeleteRangeRequest(
             key=self._to_bytes(key),
             range_end=self._to_bytes(range_end) if range_end is not None else b'',
@@ -172,6 +197,23 @@ class KVService(BaseService):
         *,
         timeout: float | None = None,
     ) -> TxnResponse:
+        """Execute an atomic compare-and-swap transaction.
+
+        Evaluates *compare* conditions atomically: if all pass, *success* operations
+        run; otherwise *failure* operations run.  All operations are applied in a
+        single cluster revision.
+
+        Args:
+            compare: Sequence of :class:`Compare` predicates built with the
+                ``txn_compare_*`` class methods.
+            success: Operations executed when every predicate evaluates to ``True``.
+            failure: Operations executed when any predicate evaluates to ``False``.
+            timeout: Per-call deadline in seconds (``None`` = no deadline).
+
+        Returns:
+            ``TxnResponse`` — ``succeeded`` is ``True`` if the success branch ran;
+            ``responses`` contains the results of the executed branch operations.
+        """
         request = TxnRequest(
             compare=list(compare),
             success=list(success),
@@ -188,6 +230,18 @@ class KVService(BaseService):
         result: int = Compare.EQUAL,
         range_end: BytesLike | None = None,
     ) -> Compare:
+        """Build a Compare predicate on a key's value.
+
+        Args:
+            key: Key to compare.
+            value: Expected value (UTF-8 string or bytes).
+            result: Comparison operator (``Compare.EQUAL``, ``LESS``, ``GREATER``,
+                ``NOT_EQUAL``).  Defaults to ``Compare.EQUAL``.
+            range_end: If set, the predicate applies to all keys in ``[key, range_end)``.
+
+        Returns:
+            ``Compare`` suitable for the *compare* argument of :meth:`txn`.
+        """
         compare = Compare(
             result=result,
             target=Compare.VALUE,
@@ -207,6 +261,20 @@ class KVService(BaseService):
         result: int = Compare.EQUAL,
         range_end: BytesLike | None = None,
     ) -> Compare:
+        """Build a Compare predicate on a key's version counter.
+
+        A key's version starts at 1 on creation and increments on each write.
+        A version of 0 means the key does not exist.
+
+        Args:
+            key: Key to compare.
+            version: Expected version number.
+            result: Comparison operator (default ``Compare.EQUAL``).
+            range_end: Optional range upper bound.
+
+        Returns:
+            ``Compare`` suitable for the *compare* argument of :meth:`txn`.
+        """
         compare = Compare(
             result=result,
             target=Compare.VERSION,
@@ -254,6 +322,17 @@ class KVService(BaseService):
         lease: int = 0,
         prev_kv: bool = False,
     ) -> RequestOp:
+        """Build a Put operation for use in a :meth:`txn` success/failure branch.
+
+        Args:
+            key: Key to write.
+            value: Value to write.
+            lease: Lease ID to attach (0 = no lease).
+            prev_kv: If ``True``, include the previous value in the response.
+
+        Returns:
+            ``RequestOp`` wrapping a ``PutRequest``.
+        """
         put_request = PutRequest(
             key=cls._to_bytes(key),
             value=cls._to_bytes(value),
@@ -271,6 +350,17 @@ class KVService(BaseService):
         serializable: bool = False,
         revision: int = 0,
     ) -> RequestOp:
+        """Build a Range (get) operation for use in a :meth:`txn` success/failure branch.
+
+        Args:
+            key: Key to read.  Use with *range_end* for range reads.
+            range_end: Exclusive upper bound for a range read.
+            serializable: Allow stale reads (default ``False``).
+            revision: Read at a specific cluster revision (0 = latest).
+
+        Returns:
+            ``RequestOp`` wrapping a ``RangeRequest``.
+        """
         range_request = RangeRequest(
             key=cls._to_bytes(key),
             range_end=cls._to_bytes(range_end) if range_end is not None else b'',
@@ -287,6 +377,16 @@ class KVService(BaseService):
         range_end: BytesLike | None = None,
         prev_kv: bool = False,
     ) -> RequestOp:
+        """Build a DeleteRange operation for use in a :meth:`txn` success/failure branch.
+
+        Args:
+            key: Key to delete.  Use with *range_end* for range deletions.
+            range_end: Exclusive upper bound for a range deletion.
+            prev_kv: If ``True``, include the previous key-value pairs in the response.
+
+        Returns:
+            ``RequestOp`` wrapping a ``DeleteRangeRequest``.
+        """
         delete_request = DeleteRangeRequest(
             key=cls._to_bytes(key),
             range_end=cls._to_bytes(range_end) if range_end is not None else b'',

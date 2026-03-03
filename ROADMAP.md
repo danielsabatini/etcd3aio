@@ -27,9 +27,18 @@ Reference: [etcd v3.6 API](https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/
 - `Alarm` (GET) → `maintenance.alarms()`
 - `Alarm` (DEACTIVATE) → `maintenance.alarm_deactivate()`
 - `Defragment` → `maintenance.defragment()` — reclaim storage freed by compaction
-- `HashKV` → `maintenance.hash_kv()` — consistency check between cluster members
+- `Hash` → `maintenance.hash()` — full-store hash for cross-member consistency verification
+- `HashKV` → `maintenance.hash_kv()` — MVCC consistency check between cluster members
 - `MoveLeader` → `maintenance.move_leader()` — transfer leadership to another member
 - `Snapshot` → `maintenance.snapshot()` — async generator streaming a full binary backup
+- `Downgrade` → `maintenance.downgrade()` — manage cluster version downgrade (`DowngradeAction` enum: VALIDATE / ENABLE / CANCEL)
+
+### Cluster Service
+- `MemberList` → `cluster.member_list()` — list all members with peer/client URLs and learner status
+- `MemberAdd` → `cluster.member_add()` — add a voting or learner member
+- `MemberRemove` → `cluster.member_remove()` — remove a member by ID
+- `MemberUpdate` → `cluster.member_update()` — update peer URLs of an existing member
+- `MemberPromote` → `cluster.member_promote()` — promote a raft learner to a voting member
 
 ### Concurrency Primitives
 - `Lock` → `client.lock()` — distributed lock
@@ -61,13 +70,6 @@ Reference: [etcd v3.6 API](https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/
 
 ---
 
-## Deferred
+## Status
 
-### Cluster Service
-- `MemberList` — list all members with their peer/client URLs
-- `MemberAdd` / `MemberRemove` / `MemberUpdate` — member management
-- `MemberPromote` — promote a learner to voting member
-
-### Maintenance
-- `Hash` — full-store hash (vs `HashKV` which covers MVCC keys only)
-- `Downgrade` — manage cluster version downgrade
+All RPCs defined in the [etcd v3.6 API reference](https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/) and the [concurrency API reference](https://etcd.io/docs/v3.6/dev-guide/api_concurrency_reference_v3/) are implemented. The library provides 100% coverage of the standard etcd v3.6 client API.

@@ -181,11 +181,31 @@ await client.auth.user_add('alice', 'secret')
 await client.auth.user_grant_role('alice', 'viewer')
 ```
 
+### ClusterService — `client.cluster`
+
+Cluster membership management: list, add, remove, update, and promote members.
+
+```python
+# List all cluster members
+resp = await client.cluster.member_list()
+for m in resp.members:
+    print(f'id={m.ID}  name={m.name}  learner={m.isLearner}  urls={list(m.peerURLs)}')
+
+# Add a learner member (non-voting), then promote to voting
+add_resp = await client.cluster.member_add(['http://10.0.0.4:2380'], is_learner=True)
+new_id = add_resp.member.ID
+await client.cluster.member_promote(new_id)
+
+# Remove a member
+await client.cluster.member_remove(new_id)
+```
+
 ### MaintenanceService — `client.maintenance`
 
 Cluster health, alarm management, storage defragmentation, consistency hashing, and snapshot streaming.
 
 ```python
+from etcd3aio import DowngradeAction
 from etcd3aio.maintenance import AlarmType
 
 status = await client.maintenance.status()
@@ -197,9 +217,16 @@ await client.maintenance.alarm_deactivate(AlarmType.NOSPACE)
 # Reclaim storage freed by compaction
 await client.maintenance.defragment()
 
-# Consistency check between members
+# Full-store hash for cross-member consistency verification
+h = await client.maintenance.hash()
+print(f'hash={h.hash:#010x}')
+
+# MVCC consistency check between members
 hkv = await client.maintenance.hash_kv()
 print(f'hash={hkv.hash:#010x}, revision={hkv.hash_revision}')
+
+# Validate downgrade eligibility (read-only, does not change cluster state)
+await client.maintenance.downgrade(DowngradeAction.VALIDATE, '3.5.0')
 
 # Stream a full binary backup
 chunks: list[bytes] = []
@@ -247,7 +274,8 @@ The [`examples/`](examples/) directory contains standalone scripts for every mod
 | `txn_example.py` | compare-and-swap, atomic ops |
 | `concurrency_example.py` | distributed lock, leader election |
 | `auth_example.py` | auth status, token management, user/role management |
-| `maintenance_example.py` | cluster status, alarms, defragment, hash_kv, snapshot |
+| `cluster_example.py` | member list, add learner, promote, remove |
+| `maintenance_example.py` | cluster status, alarms, defragment, hash, hash_kv, downgrade, snapshot |
 | `full_example.py` | integrated end-to-end demo |
 
 ## Documentation

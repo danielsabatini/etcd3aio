@@ -68,6 +68,23 @@ SnapshotRequest: TypeAlias = rpc_pb2.SnapshotRequest
 SnapshotResponse: TypeAlias = rpc_pb2.SnapshotResponse
 MoveLeaderRequest: TypeAlias = rpc_pb2.MoveLeaderRequest
 MoveLeaderResponse: TypeAlias = rpc_pb2.MoveLeaderResponse
+HashRequest: TypeAlias = rpc_pb2.HashRequest
+HashResponse: TypeAlias = rpc_pb2.HashResponse
+DowngradeRequest: TypeAlias = rpc_pb2.DowngradeRequest
+DowngradeResponse: TypeAlias = rpc_pb2.DowngradeResponse
+
+ClusterStub: TypeAlias = rpc_pb2_grpc.ClusterStub
+Member: TypeAlias = rpc_pb2.Member
+MemberAddRequest: TypeAlias = rpc_pb2.MemberAddRequest
+MemberAddResponse: TypeAlias = rpc_pb2.MemberAddResponse
+MemberRemoveRequest: TypeAlias = rpc_pb2.MemberRemoveRequest
+MemberRemoveResponse: TypeAlias = rpc_pb2.MemberRemoveResponse
+MemberUpdateRequest: TypeAlias = rpc_pb2.MemberUpdateRequest
+MemberUpdateResponse: TypeAlias = rpc_pb2.MemberUpdateResponse
+MemberListRequest: TypeAlias = rpc_pb2.MemberListRequest
+MemberListResponse: TypeAlias = rpc_pb2.MemberListResponse
+MemberPromoteRequest: TypeAlias = rpc_pb2.MemberPromoteRequest
+MemberPromoteResponse: TypeAlias = rpc_pb2.MemberPromoteResponse
 
 WatchRequest: TypeAlias = rpc_pb2.WatchRequest
 WatchCreateRequest: TypeAlias = rpc_pb2.WatchCreateRequest
@@ -150,6 +167,7 @@ __all__ = [
     'AuthUserRevokeRoleResponse',
     'AuthenticateRequest',
     'AuthenticateResponse',
+    'ClusterStub',
     'Compare',
     'CompactionRequest',
     'CompactionResponse',
@@ -157,8 +175,12 @@ __all__ = [
     'DefragmentResponse',
     'DeleteRangeRequest',
     'DeleteRangeResponse',
+    'DowngradeRequest',
+    'DowngradeResponse',
     'HashKVRequest',
     'HashKVResponse',
+    'HashRequest',
+    'HashResponse',
     'KVStub',
     'LeaseGrantRequest',
     'LeaseGrantResponse',
@@ -172,6 +194,17 @@ __all__ = [
     'LeaseTimeToLiveRequest',
     'LeaseTimeToLiveResponse',
     'MaintenanceStub',
+    'Member',
+    'MemberAddRequest',
+    'MemberAddResponse',
+    'MemberListRequest',
+    'MemberListResponse',
+    'MemberPromoteRequest',
+    'MemberPromoteResponse',
+    'MemberRemoveRequest',
+    'MemberRemoveResponse',
+    'MemberUpdateRequest',
+    'MemberUpdateResponse',
     'MoveLeaderRequest',
     'MoveLeaderResponse',
     'Permission',

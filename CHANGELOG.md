@@ -24,6 +24,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `maintenance.hash_kv()` — compute an MVCC hash for consistency checks
 - `maintenance.move_leader()` — transfer cluster leadership to another member
 - `maintenance.snapshot()` — async generator streaming a full binary backup
+- `maintenance.hash()` — full-store hash for cross-member consistency verification
+- `maintenance.downgrade()` — manage cluster version downgrade; `DowngradeAction` enum (`VALIDATE`, `ENABLE`, `CANCEL`) exported from the top-level package
+
+**Cluster service** — full Cluster API coverage
+- `cluster.member_list()` — list all members with peer/client URLs and learner status
+- `cluster.member_add()` — add a voting or learner member
+- `cluster.member_remove()` — remove a member from the cluster
+- `cluster.member_update()` — update the peer URLs of an existing member
+- `cluster.member_promote()` — promote a raft learner to a voting member
 
 ---
 

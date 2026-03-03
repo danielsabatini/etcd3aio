@@ -9,12 +9,14 @@ from etcd3aio._protobuf import (
     AlarmMember,
     AlarmResponse,
     DefragmentResponse,
+    DowngradeResponse,
     HashKVResponse,
+    HashResponse,
     MoveLeaderResponse,
     SnapshotResponse,
     StatusResponse,
 )
-from etcd3aio.maintenance import AlarmType, MaintenanceService
+from etcd3aio.maintenance import AlarmType, DowngradeAction, MaintenanceService
 
 
 @pytest.mark.asyncio
@@ -218,3 +220,76 @@ async def test_snapshot_empty_stream_yields_nothing() -> None:
             received.append(chunk)
 
     assert received == []
+
+
+# ---------------------------------------------------------------------------
+# hash
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_hash_returns_response() -> None:
+    response = HashResponse(hash=0xCAFEBABE)
+
+    stub = MagicMock()
+    stub.Hash = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.maintenance.MaintenanceStub', return_value=stub):
+        service = MaintenanceService(channel=MagicMock())
+        result = await service.hash()
+
+    assert result is response
+    assert result.hash == 0xCAFEBABE
+    stub.Hash.assert_awaited_once()
+    request = stub.Hash.await_args.args[0]
+    assert request is not None  # HashRequest has no fields
+
+
+# ---------------------------------------------------------------------------
+# downgrade
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_downgrade_validate_sends_correct_request() -> None:
+    response = DowngradeResponse(version='3.5.0')
+
+    stub = MagicMock()
+    stub.Downgrade = AsyncMock(return_value=response)
+
+    with patch('etcd3aio.maintenance.MaintenanceStub', return_value=stub):
+        service = MaintenanceService(channel=MagicMock())
+        result = await service.downgrade(DowngradeAction.VALIDATE, '3.5.0')
+
+    assert result is response
+    request = stub.Downgrade.await_args.args[0]
+    assert request.action == 0  # VALIDATE
+    assert request.version == '3.5.0'
+
+
+@pytest.mark.asyncio
+async def test_downgrade_enable_sends_correct_request() -> None:
+    stub = MagicMock()
+    stub.Downgrade = AsyncMock(return_value=DowngradeResponse(version='3.5.0'))
+
+    with patch('etcd3aio.maintenance.MaintenanceStub', return_value=stub):
+        service = MaintenanceService(channel=MagicMock())
+        await service.downgrade(DowngradeAction.ENABLE, '3.5.0')
+
+    request = stub.Downgrade.await_args.args[0]
+    assert request.action == 1  # ENABLE
+    assert request.version == '3.5.0'
+
+
+@pytest.mark.asyncio
+async def test_downgrade_cancel_sends_correct_request() -> None:
+    stub = MagicMock()
+    stub.Downgrade = AsyncMock(return_value=DowngradeResponse(version='3.5.0'))
+
+    with patch('etcd3aio.maintenance.MaintenanceStub', return_value=stub):
+        service = MaintenanceService(channel=MagicMock())
+        await service.downgrade(DowngradeAction.CANCEL, '3.5.0')
+
+    request = stub.Downgrade.await_args.args[0]
+    assert request.action == 2  # CANCEL
+    assert request.version == '3.5.0'

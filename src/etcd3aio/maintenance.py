@@ -10,8 +10,12 @@ from ._protobuf import (
     AlarmResponse,
     DefragmentRequest,
     DefragmentResponse,
+    DowngradeRequest,
+    DowngradeResponse,
     HashKVRequest,
     HashKVResponse,
+    HashRequest,
+    HashResponse,
     MaintenanceStub,
     MoveLeaderRequest,
     MoveLeaderResponse,
@@ -29,6 +33,14 @@ class AlarmType(IntEnum):
     NONE = 0
     NOSPACE = 1
     CORRUPT = 2
+
+
+class DowngradeAction(IntEnum):
+    """Action to perform in a :meth:`MaintenanceService.downgrade` request."""
+
+    VALIDATE = 0
+    ENABLE = 1
+    CANCEL = 2
 
 
 class MaintenanceService(BaseService):
@@ -168,3 +180,55 @@ class MaintenanceService(BaseService):
         )
         async for response in call:
             yield response.blob
+
+    async def hash(self, *, timeout: float | None = None) -> HashResponse:
+        """Compute a full-store hash of the entire backend database.
+
+        Unlike :meth:`hash_kv`, this hashes the complete on-disk store without
+        MVCC revision filtering.  Intended for testing and cross-member
+        consistency verification.
+
+        Key response field: ``hash`` (uint32).
+        """
+        return await self._rpc(
+            self._stub.Hash,
+            HashRequest(),
+            operation='Maintenance.Hash',
+            timeout=timeout,
+        )
+
+    async def downgrade(
+        self,
+        action: DowngradeAction,
+        version: str,
+        *,
+        timeout: float | None = None,
+    ) -> DowngradeResponse:
+        """Manage a cluster version downgrade.
+
+        Args:
+            action: One of :attr:`DowngradeAction.VALIDATE`, ``ENABLE``, or
+                ``CANCEL``.
+            version: Target version string (e.g. ``"3.5.0"``).
+
+        Key response field: ``version`` — the version being downgraded to.
+
+        Typical workflow::
+
+            from etcd3aio import DowngradeAction
+
+            # Step 1: validate the target version is eligible for downgrade
+            await client.maintenance.downgrade(DowngradeAction.VALIDATE, "3.5.0")
+
+            # Step 2: initiate the downgrade
+            await client.maintenance.downgrade(DowngradeAction.ENABLE, "3.5.0")
+
+            # Optional: cancel before all members restart
+            await client.maintenance.downgrade(DowngradeAction.CANCEL, "3.5.0")
+        """
+        return await self._rpc(
+            self._stub.Downgrade,
+            DowngradeRequest(action=int(action), version=version),
+            operation='Maintenance.Downgrade',
+            timeout=timeout,
+        )
