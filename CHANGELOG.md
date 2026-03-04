@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+---
+
+## [0.2.0] - 2026-03-04
+
+### Added
+
+**Auth service** — full Auth API coverage
+- `auth.auth_enable()` / `auth.auth_disable()` — enable and disable authentication on the cluster
+- User management: `auth.user_add()`, `auth.user_get()`, `auth.user_list()`, `auth.user_delete()`, `auth.user_change_password()`
+- RBAC: `auth.user_grant_role()`, `auth.user_revoke_role()`
+- Role management: `auth.role_add()`, `auth.role_get()`, `auth.role_list()`, `auth.role_delete()`
+- RBAC: `auth.role_grant_permission()`, `auth.role_revoke_permission()`
+- `PermissionType` enum (`READ`, `WRITE`, `READWRITE`) — exported from the top-level package
+
+**Maintenance service** — extended operations
+- `maintenance.defragment()` — reclaim storage freed by previous compactions
+- `maintenance.hash_kv()` — compute an MVCC hash for consistency checks
+- `maintenance.move_leader()` — transfer cluster leadership to another member
+- `maintenance.snapshot()` — async generator streaming a full binary backup
+- `maintenance.hash()` — full-store hash for cross-member consistency verification
+- `maintenance.downgrade()` — manage cluster version downgrade; `DowngradeAction` enum (`VALIDATE`, `ENABLE`, `CANCEL`) exported from the top-level package
+
+**Cluster service** — full Cluster API coverage
+- `cluster.member_list()` — list all members with peer/client URLs and learner status
+- `cluster.member_add()` — add a voting or learner member
+- `cluster.member_remove()` — remove a member from the cluster
+- `cluster.member_update()` — update the peer URLs of an existing member
+- `cluster.member_promote()` — promote a raft learner to a voting member
+
+**Lock API** — manual lifecycle support
+- `Lock.acquire()` / `Lock.release()` — acquire and release without a context manager
+
+---
+
 ## [0.1.0] - 2026-03-01
 
 Initial release of **etcd3aio** — async Python client for etcd v3 using `grpc.aio`.
@@ -50,4 +86,6 @@ Initial release of **etcd3aio** — async Python client for etcd v3 using `grpc.
 - Error hierarchy: `EtcdError`, `EtcdConnectionError`, `EtcdTransientError`, `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError`
 - Full PEP 561 typing support (`py.typed` marker)
 
-[0.1.0]: https://github.com/dsfreitas/etcd3aio/releases/tag/v0.1.0
+[Unreleased]: https://github.com/danielsabatini/etcd3aio/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/danielsabatini/etcd3aio/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/danielsabatini/etcd3aio/releases/tag/v0.1.0

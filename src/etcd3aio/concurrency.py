@@ -49,6 +49,7 @@ class _Semaphore:
         self._lease_id: int | None = None
 
     async def _acquire(self) -> None:
+        """Acquire the semaphore slot using the etcd linearizable locking protocol."""
         lease_resp = await self._lease.grant(ttl=self._ttl)
         lease_id: int = int(lease_resp.ID)
         self._lease_id = lease_id
@@ -77,6 +78,7 @@ class _Semaphore:
                     break  # predecessor gone — re-check who's first
 
     async def _release(self) -> None:
+        """Release the semaphore by deleting the etcd key and revoking the lease."""
         if self._my_key is not None:
             with contextlib.suppress(EtcdError):
                 await self._kv.delete(self._my_key)
@@ -112,6 +114,18 @@ class Lock(_Semaphore):
     ) -> None:
         prefix = f'{_LOCK_PREFIX}/{name}/'.encode()
         super().__init__(kv, lease, watch, prefix, b'', ttl)
+
+    async def acquire(self) -> None:
+        """Acquire the lock without a context manager.
+
+        Must be paired with :meth:`release` in a ``try/finally`` block.
+        Prefer the ``async with`` form when possible.
+        """
+        await self._acquire()
+
+    async def release(self) -> None:
+        """Release the lock acquired via :meth:`acquire`."""
+        await self._release()
 
     async def __aenter__(self) -> Lock:
         await self._acquire()

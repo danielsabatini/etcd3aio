@@ -60,6 +60,31 @@ StatusResponse: TypeAlias = rpc_pb2.StatusResponse
 AlarmRequest: TypeAlias = rpc_pb2.AlarmRequest
 AlarmResponse: TypeAlias = rpc_pb2.AlarmResponse
 AlarmMember: TypeAlias = rpc_pb2.AlarmMember
+DefragmentRequest: TypeAlias = rpc_pb2.DefragmentRequest
+DefragmentResponse: TypeAlias = rpc_pb2.DefragmentResponse
+HashKVRequest: TypeAlias = rpc_pb2.HashKVRequest
+HashKVResponse: TypeAlias = rpc_pb2.HashKVResponse
+SnapshotRequest: TypeAlias = rpc_pb2.SnapshotRequest
+SnapshotResponse: TypeAlias = rpc_pb2.SnapshotResponse
+MoveLeaderRequest: TypeAlias = rpc_pb2.MoveLeaderRequest
+MoveLeaderResponse: TypeAlias = rpc_pb2.MoveLeaderResponse
+HashRequest: TypeAlias = rpc_pb2.HashRequest
+HashResponse: TypeAlias = rpc_pb2.HashResponse
+DowngradeRequest: TypeAlias = rpc_pb2.DowngradeRequest
+DowngradeResponse: TypeAlias = rpc_pb2.DowngradeResponse
+
+ClusterStub: TypeAlias = rpc_pb2_grpc.ClusterStub
+Member: TypeAlias = rpc_pb2.Member
+MemberAddRequest: TypeAlias = rpc_pb2.MemberAddRequest
+MemberAddResponse: TypeAlias = rpc_pb2.MemberAddResponse
+MemberRemoveRequest: TypeAlias = rpc_pb2.MemberRemoveRequest
+MemberRemoveResponse: TypeAlias = rpc_pb2.MemberRemoveResponse
+MemberUpdateRequest: TypeAlias = rpc_pb2.MemberUpdateRequest
+MemberUpdateResponse: TypeAlias = rpc_pb2.MemberUpdateResponse
+MemberListRequest: TypeAlias = rpc_pb2.MemberListRequest
+MemberListResponse: TypeAlias = rpc_pb2.MemberListResponse
+MemberPromoteRequest: TypeAlias = rpc_pb2.MemberPromoteRequest
+MemberPromoteResponse: TypeAlias = rpc_pb2.MemberPromoteResponse
 
 WatchRequest: TypeAlias = rpc_pb2.WatchRequest
 WatchCreateRequest: TypeAlias = rpc_pb2.WatchCreateRequest
@@ -70,40 +95,128 @@ AuthenticateRequest: TypeAlias = rpc_pb2.AuthenticateRequest
 AuthenticateResponse: TypeAlias = rpc_pb2.AuthenticateResponse
 AuthStatusRequest: TypeAlias = rpc_pb2.AuthStatusRequest
 AuthStatusResponse: TypeAlias = rpc_pb2.AuthStatusResponse
+AuthEnableRequest: TypeAlias = rpc_pb2.AuthEnableRequest
+AuthEnableResponse: TypeAlias = rpc_pb2.AuthEnableResponse
+AuthDisableRequest: TypeAlias = rpc_pb2.AuthDisableRequest
+AuthDisableResponse: TypeAlias = rpc_pb2.AuthDisableResponse
+AuthUserAddRequest: TypeAlias = rpc_pb2.AuthUserAddRequest
+AuthUserAddResponse: TypeAlias = rpc_pb2.AuthUserAddResponse
+AuthUserGetRequest: TypeAlias = rpc_pb2.AuthUserGetRequest
+AuthUserGetResponse: TypeAlias = rpc_pb2.AuthUserGetResponse
+AuthUserListRequest: TypeAlias = rpc_pb2.AuthUserListRequest
+AuthUserListResponse: TypeAlias = rpc_pb2.AuthUserListResponse
+AuthUserDeleteRequest: TypeAlias = rpc_pb2.AuthUserDeleteRequest
+AuthUserDeleteResponse: TypeAlias = rpc_pb2.AuthUserDeleteResponse
+AuthUserChangePasswordRequest: TypeAlias = rpc_pb2.AuthUserChangePasswordRequest
+AuthUserChangePasswordResponse: TypeAlias = rpc_pb2.AuthUserChangePasswordResponse
+AuthUserGrantRoleRequest: TypeAlias = rpc_pb2.AuthUserGrantRoleRequest
+AuthUserGrantRoleResponse: TypeAlias = rpc_pb2.AuthUserGrantRoleResponse
+AuthUserRevokeRoleRequest: TypeAlias = rpc_pb2.AuthUserRevokeRoleRequest
+AuthUserRevokeRoleResponse: TypeAlias = rpc_pb2.AuthUserRevokeRoleResponse
+AuthRoleAddRequest: TypeAlias = rpc_pb2.AuthRoleAddRequest
+AuthRoleAddResponse: TypeAlias = rpc_pb2.AuthRoleAddResponse
+AuthRoleGetRequest: TypeAlias = rpc_pb2.AuthRoleGetRequest
+AuthRoleGetResponse: TypeAlias = rpc_pb2.AuthRoleGetResponse
+AuthRoleListRequest: TypeAlias = rpc_pb2.AuthRoleListRequest
+AuthRoleListResponse: TypeAlias = rpc_pb2.AuthRoleListResponse
+AuthRoleDeleteRequest: TypeAlias = rpc_pb2.AuthRoleDeleteRequest
+AuthRoleDeleteResponse: TypeAlias = rpc_pb2.AuthRoleDeleteResponse
+AuthRoleGrantPermissionRequest: TypeAlias = rpc_pb2.AuthRoleGrantPermissionRequest
+AuthRoleGrantPermissionResponse: TypeAlias = rpc_pb2.AuthRoleGrantPermissionResponse
+AuthRoleRevokePermissionRequest: TypeAlias = rpc_pb2.AuthRoleRevokePermissionRequest
+AuthRoleRevokePermissionResponse: TypeAlias = rpc_pb2.AuthRoleRevokePermissionResponse
+Permission: TypeAlias = auth_pb2.Permission
+UserAddOptions: TypeAlias = auth_pb2.UserAddOptions
 
 __all__ = [
     'AlarmMember',
-    'AuthStub',
-    'AuthenticateRequest',
-    'AuthenticateResponse',
-    'AuthStatusRequest',
-    'AuthStatusResponse',
     'AlarmRequest',
     'AlarmResponse',
+    'AuthDisableRequest',
+    'AuthDisableResponse',
+    'AuthEnableRequest',
+    'AuthEnableResponse',
+    'AuthRoleAddRequest',
+    'AuthRoleAddResponse',
+    'AuthRoleDeleteRequest',
+    'AuthRoleDeleteResponse',
+    'AuthRoleGetRequest',
+    'AuthRoleGetResponse',
+    'AuthRoleGrantPermissionRequest',
+    'AuthRoleGrantPermissionResponse',
+    'AuthRoleListRequest',
+    'AuthRoleListResponse',
+    'AuthRoleRevokePermissionRequest',
+    'AuthRoleRevokePermissionResponse',
+    'AuthStub',
+    'AuthStatusRequest',
+    'AuthStatusResponse',
+    'AuthUserAddRequest',
+    'AuthUserAddResponse',
+    'AuthUserChangePasswordRequest',
+    'AuthUserChangePasswordResponse',
+    'AuthUserDeleteRequest',
+    'AuthUserDeleteResponse',
+    'AuthUserGetRequest',
+    'AuthUserGetResponse',
+    'AuthUserGrantRoleRequest',
+    'AuthUserGrantRoleResponse',
+    'AuthUserListRequest',
+    'AuthUserListResponse',
+    'AuthUserRevokeRoleRequest',
+    'AuthUserRevokeRoleResponse',
+    'AuthenticateRequest',
+    'AuthenticateResponse',
+    'ClusterStub',
     'Compare',
     'CompactionRequest',
     'CompactionResponse',
+    'DefragmentRequest',
+    'DefragmentResponse',
     'DeleteRangeRequest',
     'DeleteRangeResponse',
+    'DowngradeRequest',
+    'DowngradeResponse',
+    'HashKVRequest',
+    'HashKVResponse',
+    'HashRequest',
+    'HashResponse',
     'KVStub',
     'LeaseGrantRequest',
     'LeaseGrantResponse',
     'LeaseKeepAliveRequest',
     'LeaseKeepAliveResponse',
+    'LeaseLeasesRequest',
+    'LeaseLeasesResponse',
     'LeaseRevokeRequest',
     'LeaseRevokeResponse',
     'LeaseStub',
-    'LeaseLeasesRequest',
-    'MaintenanceStub',
-    'LeaseLeasesResponse',
     'LeaseTimeToLiveRequest',
     'LeaseTimeToLiveResponse',
+    'MaintenanceStub',
+    'Member',
+    'MemberAddRequest',
+    'MemberAddResponse',
+    'MemberListRequest',
+    'MemberListResponse',
+    'MemberPromoteRequest',
+    'MemberPromoteResponse',
+    'MemberRemoveRequest',
+    'MemberRemoveResponse',
+    'MemberUpdateRequest',
+    'MemberUpdateResponse',
+    'MoveLeaderRequest',
+    'MoveLeaderResponse',
+    'Permission',
+    'UserAddOptions',
     'PutRequest',
     'PutResponse',
     'RangeRequest',
     'RangeResponse',
     'RequestOp',
     'ResponseOp',
+    'SnapshotRequest',
+    'SnapshotResponse',
     'StatusRequest',
     'StatusResponse',
     'TxnRequest',

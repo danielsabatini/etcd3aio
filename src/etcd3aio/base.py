@@ -28,7 +28,18 @@ _Metadata: TypeAlias = tuple[tuple[str, str], ...]
 
 
 class BaseService:
-    """Shared RPC helpers for unary etcd calls."""
+    """Shared retry logic and token management for all service classes.
+
+    Provides :meth:`_rpc` — the single entry point for every unary gRPC call
+    in the library.  All service modules inherit from this class instead of
+    duplicating retry logic.
+
+    Args:
+        max_attempts: Maximum retry attempts for transient errors.
+        initial_backoff_seconds: Starting delay between retries (doubles on
+            each attempt up to *max_backoff_seconds*).
+        max_backoff_seconds: Upper cap on the retry backoff delay.
+    """
 
     def __init__(
         self,
@@ -55,6 +66,7 @@ class BaseService:
 
     @staticmethod
     def _is_transient_error(exc: grpc.aio.AioRpcError) -> bool:
+        """Return ``True`` if *exc* has a status code that warrants a retry."""
         return exc.code() in TRANSIENT_CODES
 
     async def _rpc(
@@ -65,12 +77,30 @@ class BaseService:
         operation: str,
         timeout: float | None = None,
     ) -> ResponseT:
+        """Execute a unary gRPC call with retry and error mapping.
+
+        Wraps *call* in an ``asyncio.timeout`` and retries on transient status
+        codes (``UNAVAILABLE``, ``DEADLINE_EXCEEDED``) with exponential backoff.
+        Non-transient status codes are mapped to library exceptions:
+
+        - ``UNAUTHENTICATED`` → :exc:`~etcd3aio.EtcdUnauthenticatedError`
+        - ``PERMISSION_DENIED`` → :exc:`~etcd3aio.EtcdPermissionDeniedError`
+        - After retry exhaustion: ``UNAVAILABLE`` → :exc:`~etcd3aio.EtcdConnectionError`,
+          ``DEADLINE_EXCEEDED`` → :exc:`~etcd3aio.EtcdTransientError`
+
+        Args:
+            call: The gRPC stub method to invoke.
+            request: Protobuf request object.
+            operation: Human-readable label used in error messages (e.g. ``'KV.Put'``).
+            timeout: Per-attempt gRPC deadline in seconds (``None`` = no deadline).
+                The ``asyncio.timeout`` wrapper also bounds the total retry loop.
+        """
         async with asyncio.timeout(timeout):
             backoff_seconds = self._initial_backoff_seconds
 
             for attempt in range(1, self._max_attempts + 1):
                 try:
-                    return await call(request, metadata=self._metadata or None)  # type: ignore[call-arg]
+                    return await call(request, metadata=self._metadata or None, timeout=timeout)  # type: ignore[call-arg]
                 except grpc.aio.AioRpcError as exc:
                     is_last_attempt = attempt == self._max_attempts
                     if not self._is_transient_error(exc) or is_last_attempt:

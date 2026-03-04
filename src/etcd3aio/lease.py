@@ -115,12 +115,30 @@ class LeaseService(BaseService):
     async def grant(
         self, ttl: int, lease_id: int = 0, *, timeout: float | None = None
     ) -> LeaseGrantResponse:
+        """Grant a new lease with the given TTL.
+
+        Args:
+            ttl: Time-to-live in seconds.  etcd may round this up to a
+                server-side minimum.
+            lease_id: Requested lease ID (0 = server assigns one automatically).
+            timeout: Per-call deadline in seconds (``None`` = no deadline).
+
+        Returns:
+            ``LeaseGrantResponse`` — key fields: ``ID`` (pass to
+            :meth:`~KVService.put`), ``TTL`` (actual TTL granted by the server).
+        """
         request = LeaseGrantRequest(TTL=ttl, ID=lease_id)
         return await self._rpc(
             self._stub.LeaseGrant, request, operation='Lease.Grant', timeout=timeout
         )
 
     async def revoke(self, lease_id: int, *, timeout: float | None = None) -> LeaseRevokeResponse:
+        """Revoke *lease_id* and delete all keys attached to it.
+
+        Args:
+            lease_id: ID returned by :meth:`grant`.
+            timeout: Per-call deadline in seconds (``None`` = no deadline).
+        """
         request = LeaseRevokeRequest(ID=lease_id)
         return await self._rpc(
             self._stub.LeaseRevoke, request, operation='Lease.Revoke', timeout=timeout
@@ -129,6 +147,18 @@ class LeaseService(BaseService):
     async def time_to_live(
         self, lease_id: int, keys: bool = False, *, timeout: float | None = None
     ) -> LeaseTimeToLiveResponse:
+        """Return the remaining TTL and optionally the attached keys for *lease_id*.
+
+        Args:
+            lease_id: ID returned by :meth:`grant`.
+            keys: If ``True``, include the list of keys attached to the lease.
+            timeout: Per-call deadline in seconds (``None`` = no deadline).
+
+        Returns:
+            ``LeaseTimeToLiveResponse`` — key fields: ``TTL`` (remaining seconds,
+            ``-1`` if expired), ``grantedTTL``, ``keys`` (populated only when
+            *keys* is ``True``).
+        """
         request = LeaseTimeToLiveRequest(ID=lease_id, keys=keys)
         return await self._rpc(
             self._stub.LeaseTimeToLive,

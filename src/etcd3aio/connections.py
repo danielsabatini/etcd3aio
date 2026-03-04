@@ -11,7 +11,17 @@ ChannelOption: TypeAlias = tuple[str, ChannelOptionValue]
 
 
 class ConnectionManager:
-    """Builds asyncio gRPC channels with round-robin load balancing."""
+    """Builds asyncio gRPC channels with round-robin load balancing.
+
+    Args:
+        endpoints: One or more ``host:port`` strings.  ``localhost`` is
+            automatically replaced with ``127.0.0.1`` to force IPv4 and
+            avoid gRPC resolver ambiguity.
+        keepalive_time_ms: Interval between gRPC keepalive pings in
+            milliseconds (default 10 s).
+        keepalive_timeout_ms: Time to wait for a keepalive ping ACK before
+            treating the connection as dead (default 5 s).
+    """
 
     def __init__(
         self,
@@ -39,6 +49,26 @@ class ConnectionManager:
         cert_key: bytes | None = None,
         cert_chain: bytes | None = None,
     ) -> grpc.aio.Channel:
+        """Create and return a gRPC async channel.
+
+        Returns an insecure channel when *ca_cert* is ``None``, or a
+        TLS-secured channel otherwise.
+
+        Args:
+            ca_cert: PEM-encoded CA certificate bytes for server verification.
+                Required to enable TLS.
+            cert_key: PEM-encoded client private key bytes for mutual TLS (mTLS).
+                Requires *ca_cert*.
+            cert_chain: PEM-encoded client certificate chain bytes for mTLS.
+                Requires *ca_cert*.
+
+        Returns:
+            :class:`grpc.aio.Channel` configured with round-robin load
+            balancing and gRPC keepalives.
+
+        Raises:
+            ValueError: if *cert_key* or *cert_chain* is provided without *ca_cert*.
+        """
         if ca_cert is None and (cert_key is not None or cert_chain is not None):
             raise ValueError('ca_cert is required when cert_key or cert_chain is provided')
 

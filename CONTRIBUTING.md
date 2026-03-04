@@ -35,6 +35,31 @@ uv run pytest               # tests
 - Handle transient gRPC errors (`UNAVAILABLE`, `DEADLINE_EXCEEDED`) through `BaseService._rpc()` — do not add per-method retry logic.
 - Ensure channels and streams are properly closed/cancelled on exit.
 
+## Docstrings
+
+All public API must follow Google-style docstrings:
+
+- **Classes**: class-level docstring describing purpose, with a usage example for non-trivial classes.  `__init__` does not need its own docstring.
+- **Public methods**: one-line summary + `Args:` for non-obvious parameters + `Returns:` with key response fields + `Raises:` for documented exceptions.
+- **Private methods** (`_`-prefixed): a one-liner is enough.
+- **Protocol methods** (`__aenter__`, `__aexit__`): no docstring required.
+
+Style reference:
+
+```python
+async def put(self, key: str, value: str, *, timeout: float | None = None) -> PutResponse:
+    """Store *key* with the given *value*.
+
+    Args:
+        key: Key name (UTF-8 string or bytes).
+        value: Value to store (UTF-8 string or bytes).
+        timeout: Per-call deadline in seconds (``None`` = no deadline).
+
+    Returns:
+        ``PutResponse`` — ``prev_kv`` is populated only when ``prev_kv=True``.
+    """
+```
+
 ## PR Checklist
 
 Before opening a pull request, confirm:

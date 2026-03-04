@@ -1,16 +1,16 @@
 [project]
 name = "etcd3aio"
-version = "0.1.0"
+version = "0.2.0"
 description = "Async Python client for etcd v3 (grpc.aio, Python 3.11+)"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { file = "LICENSE" }
-authors = [{ name = "dsfreitas" }]
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "danielsabatini" }]
 keywords = ["etcd", "etcd3", "asyncio", "grpc", "distributed"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -26,9 +26,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/dsfreitas/etcd3aio"
-Repository = "https://github.com/dsfreitas/etcd3aio"
-Issues = "https://github.com/dsfreitas/etcd3aio/issues"
+Homepage = "https://github.com/danielsabatini/etcd3aio"
+Repository = "https://github.com/danielsabatini/etcd3aio"
+Issues = "https://github.com/danielsabatini/etcd3aio/issues"
 
 [dependency-groups]
 dev = [
@@ -60,7 +60,8 @@ exclude = ["build", "dist", "__pycache__", "*.egg-info", ".venv", "src/etcd3aio/
 select = ["E", "W", "F", "I", "PL", "PT"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*.py" = ["PLR2004"]
+"tests/unit/*.py" = ["PLR2004"]
+"tests/integration/*.py" = ["PLR2004"]
 
 [tool.ruff.format]
 quote-style = "single"
@@ -77,9 +78,14 @@ reportMissingImports = "none"
 reportMissingModuleSource = "none"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests/unit", "tests/integration"]
 addopts = "--cov=src --cov-report=xml --cov-report=term --cov-report=html -v"
 asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+markers = [
+    "integration: tests that require a running etcd cluster (auto-skipped when etcd is not reachable)",
+]
 
 [tool.coverage.run]
 omit = [

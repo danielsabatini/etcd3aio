@@ -24,7 +24,7 @@ async def test_grpc_options(endpoints: list[str]) -> None:
     manager = ConnectionManager(endpoints)
 
     with patch('grpc.aio.insecure_channel') as insecure_channel_mock:
-        await manager.get_channel()
+        manager.get_channel()
 
     call_args = insecure_channel_mock.call_args
     assert call_args is not None
@@ -41,4 +41,4 @@ async def test_tls_requires_ca_cert(endpoints: list[str]) -> None:
     manager = ConnectionManager(endpoints)
 
     with pytest.raises(ValueError, match='ca_cert is required'):
-        await manager.get_channel(cert_key=b'key')
+        manager.get_channel(cert_key=b'key')
