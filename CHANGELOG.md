@@ -79,4 +79,4 @@ Initial release of **etcd3aio** — async Python client for etcd v3 using `grpc.
 - Error hierarchy: `EtcdError`, `EtcdConnectionError`, `EtcdTransientError`, `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError`
 - Full PEP 561 typing support (`py.typed` marker)
 
-[0.1.0]: https://github.com/dsfreitas/etcd3aio/releases/tag/v0.1.0
+[0.1.0]: https://github.com/danielsabatini/etcd3aio/releases/tag/v0.1.0

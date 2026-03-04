@@ -5,7 +5,7 @@ description = "Async Python client for etcd v3 (grpc.aio, Python 3.11+)"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
-authors = [{ name = "dsfreitas" }]
+authors = [{ name = "danielsabatini" }]
 keywords = ["etcd", "etcd3", "asyncio", "grpc", "distributed"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -26,9 +26,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/dsfreitas/etcd3aio"
-Repository = "https://github.com/dsfreitas/etcd3aio"
-Issues = "https://github.com/dsfreitas/etcd3aio/issues"
+Homepage = "https://github.com/danielsabatini/etcd3aio"
+Repository = "https://github.com/danielsabatini/etcd3aio"
+Issues = "https://github.com/danielsabatini/etcd3aio/issues"
 
 [dependency-groups]
 dev = [
