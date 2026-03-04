@@ -3,7 +3,7 @@
 Async Python client for etcd v3 using `grpc.aio`.
 
 [![CI](https://github.com/dsfreitas/etcd3aio/actions/workflows/ci.yml/badge.svg)](https://github.com/dsfreitas/etcd3aio/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/dsfreitas/etcd3aio/branch/main/graph/badge.svg)](https://codecov.io/gh/dsfreitas/etcd3aio)
+[![codecov](https://codecov.io/gh/danielsabatini/etcd3aio/graph/badge.svg)](https://codecov.io/gh/danielsabatini/etcd3aio)
 [![PyPI](https://img.shields.io/pypi/v/etcd3aio)](https://pypi.org/project/etcd3aio/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
