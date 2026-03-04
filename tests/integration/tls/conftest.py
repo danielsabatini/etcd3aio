@@ -32,7 +32,8 @@ import pytest
 import pytest_asyncio
 
 from etcd3aio import Etcd3Client
-from etcd3aio.kv import prefix_range_end
+
+from .._helpers import delete_test_keys
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -180,4 +181,4 @@ async def cleanup(etcd_tls: Etcd3Client) -> None:  # type: ignore[return]
     is never pulled in for TLS tests.
     """
     yield
-    await etcd_tls.kv.delete(TEST_PREFIX, range_end=prefix_range_end(TEST_PREFIX))
+    await delete_test_keys(etcd_tls, TEST_PREFIX)

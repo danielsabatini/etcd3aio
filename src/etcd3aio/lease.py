@@ -113,7 +113,7 @@ class LeaseService(BaseService):
         self._stub = LeaseStub(channel)
 
     async def grant(
-        self, ttl: int, lease_id: int = 0, *, timeout: float | None = None
+        self, ttl: int, lease_id: int = 0, *, timeout: float | None = None, max_attempts: int | None = None
     ) -> LeaseGrantResponse:
         """Grant a new lease with the given TTL.
 
@@ -122,6 +122,7 @@ class LeaseService(BaseService):
                 server-side minimum.
             lease_id: Requested lease ID (0 = server assigns one automatically).
             timeout: Per-call deadline in seconds (``None`` = no deadline).
+            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
 
         Returns:
             ``LeaseGrantResponse`` — key fields: ``ID`` (pass to
@@ -129,23 +130,24 @@ class LeaseService(BaseService):
         """
         request = LeaseGrantRequest(TTL=ttl, ID=lease_id)
         return await self._rpc(
-            self._stub.LeaseGrant, request, operation='Lease.Grant', timeout=timeout
+            self._stub.LeaseGrant, request, operation='Lease.Grant', timeout=timeout, max_attempts=max_attempts
         )
 
-    async def revoke(self, lease_id: int, *, timeout: float | None = None) -> LeaseRevokeResponse:
+    async def revoke(self, lease_id: int, *, timeout: float | None = None, max_attempts: int | None = None) -> LeaseRevokeResponse:
         """Revoke *lease_id* and delete all keys attached to it.
 
         Args:
             lease_id: ID returned by :meth:`grant`.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
+            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
         """
         request = LeaseRevokeRequest(ID=lease_id)
         return await self._rpc(
-            self._stub.LeaseRevoke, request, operation='Lease.Revoke', timeout=timeout
+            self._stub.LeaseRevoke, request, operation='Lease.Revoke', timeout=timeout, max_attempts=max_attempts
         )
 
     async def time_to_live(
-        self, lease_id: int, keys: bool = False, *, timeout: float | None = None
+        self, lease_id: int, keys: bool = False, *, timeout: float | None = None, max_attempts: int | None = None
     ) -> LeaseTimeToLiveResponse:
         """Return the remaining TTL and optionally the attached keys for *lease_id*.
 
@@ -153,6 +155,7 @@ class LeaseService(BaseService):
             lease_id: ID returned by :meth:`grant`.
             keys: If ``True``, include the list of keys attached to the lease.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
+            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
 
         Returns:
             ``LeaseTimeToLiveResponse`` — key fields: ``TTL`` (remaining seconds,
@@ -165,15 +168,22 @@ class LeaseService(BaseService):
             request,
             operation='Lease.TimeToLive',
             timeout=timeout,
+            max_attempts=max_attempts,
         )
 
-    async def leases(self, *, timeout: float | None = None) -> LeaseLeasesResponse:
-        """List all active leases in the cluster."""
+    async def leases(self, *, timeout: float | None = None, max_attempts: int | None = None) -> LeaseLeasesResponse:
+        """List all active leases in the cluster.
+
+        Args:
+            timeout: Per-call deadline in seconds (``None`` = no deadline).
+            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+        """
         return await self._rpc(
             self._stub.LeaseLeases,
             LeaseLeasesRequest(),
             operation='Lease.Leases',
             timeout=timeout,
+            max_attempts=max_attempts,
         )
 
     def keep_alive(self, lease_id: int) -> grpc.aio.StreamStreamCall:

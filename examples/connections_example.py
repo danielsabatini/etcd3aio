@@ -6,7 +6,6 @@ import logging
 from collections.abc import Sequence
 
 from etcd3aio.client import Etcd3Client
-from etcd3aio.connections import ConnectionManager
 from etcd3aio.kv import KVService
 
 logging.basicConfig(level=logging.WARNING, format='%(levelname)s:%(name)s: %(message)s')
@@ -30,16 +29,12 @@ def parse_args() -> argparse.Namespace:
 
 
 async def check_endpoint(endpoint: str, timeout: float) -> bool:
-    manager = ConnectionManager([endpoint])
-    channel = manager.get_channel()
-
-    try:
-        await asyncio.wait_for(channel.channel_ready(), timeout=timeout)
-        return True
-    except (TimeoutError, asyncio.TimeoutError):
-        return False
-    finally:
-        await channel.close()
+    async with Etcd3Client([endpoint]) as client:
+        try:
+            await client.ping(timeout=timeout)
+            return True
+        except Exception:
+            return False
 
 
 async def run_cluster_smoke(endpoints: Sequence[str]) -> None:

@@ -12,6 +12,10 @@ Run integration tests only (requires etcd):
 
 Run everything:
     pytest
+
+Note: ``tests/integration/tls/conftest.py`` defines its own ``cleanup``
+fixture with the same name that shadows this one for all TLS tests, so that
+the plain-TCP ``etcd`` fixture is never pulled in when running TLS tests.
 """
 
 from __future__ import annotations
@@ -20,7 +24,8 @@ import pytest
 import pytest_asyncio
 
 from etcd3aio import Etcd3Client
-from etcd3aio.kv import prefix_range_end
+
+from ._helpers import delete_test_keys
 
 # Endpoint used by docker/compose.yaml (etcd1 maps host port 2379 → container 2379)
 ETCD_ENDPOINT = 'localhost:2379'
@@ -52,6 +57,9 @@ async def etcd() -> Etcd3Client:  # type: ignore[return]
 
 @pytest_asyncio.fixture(autouse=True)
 async def cleanup(etcd: Etcd3Client) -> None:  # type: ignore[return]
-    """Delete all test/* keys after each test to guarantee isolation."""
+    """Delete all test/* keys after each test to guarantee isolation.
+
+    Shadowed by ``tests/integration/tls/conftest.py::cleanup`` for TLS tests.
+    """
     yield
-    await etcd.kv.delete(TEST_PREFIX, range_end=prefix_range_end(TEST_PREFIX))
+    await delete_test_keys(etcd, TEST_PREFIX)

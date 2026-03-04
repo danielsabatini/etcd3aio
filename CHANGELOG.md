@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Etcd3Client(tls_server_name=...)` — new parameter that sets `grpc.ssl_target_name_override`; required when connecting to multiple TLS endpoints via the `ipv4:` round-robin scheme, because gRPC cannot derive a single hostname from a comma-separated address list
 - `ConnectionManager.get_channel(tls_server_name=...)` — low-level counterpart; injects the override only when `ca_cert` is also provided
 - `docker/gen-certs.sh` — script to regenerate peer CA, server CA, and client certificates with correct Subject Alternative Names for the TLS test cluster (`etcdtls1`, `etcdtls2`, `etcdtls3`, `localhost`, `127.0.0.1`)
-- `tests/integration/test_tls.py` — integration test suite for the mTLS cluster (auto-skipped when the cluster is not running): `test_tls_ping`, `test_tls_put_and_get`, `test_tls_member_list`, `test_tls_no_plaintext_access`
+- `tests/integration/tls/` — dedicated TLS integration test suite with self-contained fixture chain (`tls_certs` → `tls_cluster` → `etcd_tls`); auto-starts Docker cluster and generates certificates when missing; auto-skipped when Docker is unavailable: `test_tls_ping`, `test_tls_put_and_get`, `test_tls_member_list`, `test_tls_no_plaintext_access`
 
 ---
 

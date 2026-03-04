@@ -70,6 +70,25 @@ Reference: [etcd v3.6 API](https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/
 
 ---
 
+---
+
+## Planned
+
+### Observability (OpenTelemetry)
+
+Goal: expose tracing and metrics for all RPC calls so that operators can monitor etcd interactions in production without adding custom instrumentation.
+
+**Design direction**: opt-in OpenTelemetry integration (`opentelemetry-api` as an optional dependency). When a tracer/meter is configured, `BaseService._rpc()` creates a span per call with standard attributes (`db.system=etcd`, operation name, attempt count, endpoint) and records error events on failure.
+
+**Scope**:
+- Span per unary RPC: operation name, attempt count, final status code
+- Counter metric: `etcd.rpc.attempts_total` (labels: operation, status)
+- Histogram metric: `etcd.rpc.duration_seconds` (labels: operation)
+- No-op when `opentelemetry-api` is not installed (zero overhead)
+- Unit tests via mock tracer/meter; integration tests verify spans are emitted
+
+---
+
 ## Status
 
 All RPCs defined in the [etcd v3.6 API reference](https://etcd.io/docs/v3.6/dev-guide/api_reference_v3/) and the [concurrency API reference](https://etcd.io/docs/v3.6/dev-guide/api_concurrency_reference_v3/) are implemented. The library provides 100% coverage of the standard etcd v3.6 client API.

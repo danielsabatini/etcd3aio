@@ -358,3 +358,26 @@ async with Etcd3Client(
 | `client-key.key` | Private key for the client certificate; passed as `cert_key` |
 
 Generate a self-signed set for local testing with `docker/gen-certs.sh`.
+
+---
+
+## Per-call retry override
+
+Every service method accepts an optional `max_attempts` keyword argument that overrides the
+service-level retry limit for that single call.  Pass `max_attempts=1` to disable retries
+entirely, or a higher value for operations that warrant more aggressive retry:
+
+```python
+# One-shot — fail immediately on transient error (no retry)
+await client.kv.put('myapp/key', 'value', max_attempts=1)
+
+# Extra-patient — retry up to 10 times (useful for slow compaction)
+await client.kv.compact(revision=1000, max_attempts=10)
+
+# Works on every service method
+status = await client.maintenance.status(max_attempts=1)
+resp   = await client.cluster.member_list(max_attempts=5)
+```
+
+When omitted (the default, `None`), the value set on the service instance at construction
+time is used (default: 3 attempts with exponential backoff from 50 ms up to 1 s).

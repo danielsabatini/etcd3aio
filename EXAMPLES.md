@@ -38,6 +38,7 @@ bash docker/gen-certs.sh
 | `auth_example.py` | auth status, token management, user/role RBAC |
 | `cluster_example.py` | member list, add learner, promote, remove |
 | `maintenance_example.py` | cluster status, alarms, defragment, hash, hash_kv, downgrade, snapshot |
+| `tls_example.py` | mTLS multi-endpoint connection, ping, KV, member list, maintenance status |
 | `full_example.py` | integrated end-to-end smoke test |
 
 ---
@@ -461,7 +462,54 @@ member_list() -> 3 member(s)
 
 ---
 
-### 12. `full_example.py`
+### 12. `tls_example.py`
+
+**What it does:** connects to the local mTLS cluster over mutual TLS, then exercises ping, KV put/get/delete, member list, and maintenance status to confirm the secure channel is fully operational.
+
+**Prerequisites:**
+
+```bash
+bash docker/gen-certs.sh                                              # generate certificates once
+docker compose -f docker/compose.yaml up -d etcdtls1 etcdtls2 etcdtls3
+```
+
+**Run:**
+
+```bash
+uv run python examples/tls_example.py
+```
+
+**Custom certificate directory:**
+
+```bash
+uv run python examples/tls_example.py --certs-dir /path/to/certs
+```
+
+**Expected output:**
+
+```
+ping -> mTLS connection established (3 endpoint(s))
+put/get -> hello-over-tls
+delete -> ok
+member_list -> 3 member(s)
+  id=<ID>  name='etcdtls1'
+  id=<ID>  name='etcdtls2'
+  id=<ID>  name='etcdtls3'
+maintenance.status -> version=3.6.8  dbSize=<N>
+```
+
+**What to observe:**
+
+| Behaviour | What it proves |
+|---|---|
+| `ping` succeeds | mTLS handshake completed — CA, client cert, and private key are all valid |
+| `put/get` round-trip | Encrypted KV reads and writes work end-to-end |
+| 3 members listed | All three TLS nodes are alive and reachable |
+| `FileNotFoundError` on startup | Certificate files are missing — run `bash docker/gen-certs.sh` |
+
+---
+
+### 13. `full_example.py`
 
 **What it does:** end-to-end smoke test that exercises every service in sequence — ping, KV, Lease, Watch, Maintenance, Lock, and Election — using all 3 cluster nodes with automatic round-robin load balancing.
 

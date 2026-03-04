@@ -26,7 +26,7 @@ class ClusterService(BaseService):
         self._stub = ClusterStub(channel)
 
     async def member_list(
-        self, *, linearizable: bool = True, timeout: float | None = None
+        self, *, linearizable: bool = True, timeout: float | None = None, max_attempts: int | None = None
     ) -> MemberListResponse:
         """List all members in the cluster.
 
@@ -35,6 +35,8 @@ class ClusterService(BaseService):
                 ensuring it reflects the latest committed cluster state.
                 Set to ``False`` for a serializable (potentially stale) read that
                 avoids a quorum round-trip.
+            timeout: Per-call deadline in seconds (``None`` = no deadline).
+            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
 
         Key response field: ``members`` — list of ``Member`` objects, each with
         ``ID``, ``name``, ``peerURLs``, ``clientURLs`` and ``isLearner``.
@@ -44,6 +46,7 @@ class ClusterService(BaseService):
             MemberListRequest(linearizable=linearizable),
             operation='Cluster.MemberList',
             timeout=timeout,
+            max_attempts=max_attempts,
         )
 
     async def member_add(
@@ -52,6 +55,7 @@ class ClusterService(BaseService):
         *,
         is_learner: bool = False,
         timeout: float | None = None,
+        max_attempts: int | None = None,
     ) -> MemberAddResponse:
         """Add a new member to the cluster.
 
@@ -61,6 +65,8 @@ class ClusterService(BaseService):
             is_learner: If ``True``, add the member as a raft learner
                 (non-voting).  A learner must be promoted via
                 :meth:`member_promote` before it participates in consensus.
+            timeout: Per-call deadline in seconds (``None`` = no deadline).
+            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
 
         Key response fields: ``member`` (the added ``Member``), ``members``
         (full updated member list).
@@ -70,16 +76,19 @@ class ClusterService(BaseService):
             MemberAddRequest(peerURLs=peer_urls, isLearner=is_learner),
             operation='Cluster.MemberAdd',
             timeout=timeout,
+            max_attempts=max_attempts,
         )
 
     async def member_remove(
-        self, member_id: int, *, timeout: float | None = None
+        self, member_id: int, *, timeout: float | None = None, max_attempts: int | None = None
     ) -> MemberRemoveResponse:
         """Remove a member from the cluster by its numeric ID.
 
         Args:
             member_id: The ``ID`` field of the ``Member`` to remove (obtained
                 from :meth:`member_list`).
+            timeout: Per-call deadline in seconds (``None`` = no deadline).
+            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
 
         Key response field: ``members`` — updated full member list after removal.
         """
@@ -88,6 +97,7 @@ class ClusterService(BaseService):
             MemberRemoveRequest(ID=member_id),
             operation='Cluster.MemberRemove',
             timeout=timeout,
+            max_attempts=max_attempts,
         )
 
     async def member_update(
@@ -96,12 +106,15 @@ class ClusterService(BaseService):
         peer_urls: list[str],
         *,
         timeout: float | None = None,
+        max_attempts: int | None = None,
     ) -> MemberUpdateResponse:
         """Update the peer URLs of an existing cluster member.
 
         Args:
             member_id: The ``ID`` of the member to update.
             peer_urls: New list of peer URL strings.
+            timeout: Per-call deadline in seconds (``None`` = no deadline).
+            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
 
         Key response field: ``members`` — updated full member list.
         """
@@ -110,15 +123,18 @@ class ClusterService(BaseService):
             MemberUpdateRequest(ID=member_id, peerURLs=peer_urls),
             operation='Cluster.MemberUpdate',
             timeout=timeout,
+            max_attempts=max_attempts,
         )
 
     async def member_promote(
-        self, member_id: int, *, timeout: float | None = None
+        self, member_id: int, *, timeout: float | None = None, max_attempts: int | None = None
     ) -> MemberPromoteResponse:
         """Promote a raft learner member to a full voting member.
 
         Args:
             member_id: The ``ID`` of the learner member to promote.
+            timeout: Per-call deadline in seconds (``None`` = no deadline).
+            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
 
         The member must have been added with ``is_learner=True`` via
         :meth:`member_add` and must be up to date with the leader log before
@@ -131,4 +147,5 @@ class ClusterService(BaseService):
             MemberPromoteRequest(ID=member_id),
             operation='Cluster.MemberPromote',
             timeout=timeout,
+            max_attempts=max_attempts,
         )
