@@ -34,11 +34,12 @@ resp = await client.kv.get(
 resp = await client.kv.get('myapp/', range_end=prefix_range_end('myapp/'), keys_only=True)
 
 # Count only (no key or value data transferred)
-resp = await client.kv.get('myapp/', range_end=prefix_range_end('myapp/'), count_only=True)
-print(resp.count)
+count_resp = await client.kv.get('myapp/', range_end=prefix_range_end('myapp/'), count_only=True)
+print(count_resp.count)
 
-# Compact historical revisions
-header = await client.kv.compact(revision=resp.header.revision)
+# Compact historical revisions up to the current revision
+current_revision = count_resp.header.revision
+await client.kv.compact(revision=current_revision)
 
 # Compare-and-swap (atomic transaction)
 resp = await client.kv.txn(

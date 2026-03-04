@@ -21,7 +21,7 @@ Async Python client for etcd v3 using `grpc.aio`.
 ## Requirements
 
 - Python 3.11+
-- etcd v3.5+ (see [Local cluster](#local-cluster-docker) to run one locally)
+- etcd v3.5+ tested against v3.6 (see [Local cluster](#local-cluster-docker) to run one locally)
 
 ## Installation
 

@@ -244,7 +244,10 @@ Watch NODELETE filter -> events=1, type=0
 uv run python examples/watch_example.py --timeout 1
 ```
 
-Still works — the PUT is issued 0.2 s after the watch is registered, well within 1 s.
+| Behaviour | What it proves |
+|---|---|
+| Output identical to default | PUT is issued 0.2 s after the watch is registered — well within 1 s |
+| No timeout error | Watch stream receives the event before the deadline expires |
 
 ---
 
