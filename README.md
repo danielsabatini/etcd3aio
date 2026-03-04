@@ -125,21 +125,33 @@ This creates `server-ca.crt`, `client-cert.crt`, `client-key.key`, and peer cert
 
 ### Connecting to the TLS cluster
 
+Three certificate files are required — obtain them from your etcd administrator or generate them with `gen-certs.sh` for local development:
+
+| File | Purpose | `Etcd3Client` parameter |
+|---|---|---|
+| `server-ca.crt` | CA that signed the server certificate | `ca_cert` |
+| `client-cert.crt` | Client certificate presented during the mTLS handshake | `cert_chain` |
+| `client-key.key` | Private key for the client certificate | `cert_key` |
+
+Pass the file contents as `bytes` directly to the client constructor:
+
 ```python
 from pathlib import Path
 from etcd3aio import Etcd3Client
 
-docker_dir = Path('docker')
+certs = Path('docker')  # adjust to your certificate directory
 
 async with Etcd3Client(
     ['localhost:5379', 'localhost:6379', 'localhost:7379'],
-    ca_cert=(docker_dir / 'server-ca.crt').read_bytes(),
-    cert_chain=(docker_dir / 'client-cert.crt').read_bytes(),
-    cert_key=(docker_dir / 'client-key.key').read_bytes(),
-    tls_server_name='localhost',   # required for multi-endpoint TLS — see MODULES.md
+    ca_cert=    (certs / 'server-ca.crt').read_bytes(),
+    cert_chain= (certs / 'client-cert.crt').read_bytes(),
+    cert_key=   (certs / 'client-key.key').read_bytes(),
+    tls_server_name='localhost',  # required for multi-endpoint TLS — see MODULES.md
 ) as client:
     await client.ping()
 ```
+
+> **`tls_server_name`** is required when connecting to multiple endpoints. The gRPC `ipv4:` round-robin scheme encodes all addresses as a comma-separated string and cannot derive a hostname for TLS verification. Set it to a DNS name present in the server certificate's Subject Alternative Names (SANs).
 
 ## Documentation
 
