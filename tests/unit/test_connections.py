@@ -42,3 +42,29 @@ async def test_tls_requires_ca_cert(endpoints: list[str]) -> None:
 
     with pytest.raises(ValueError, match='ca_cert is required'):
         manager.get_channel(cert_key=b'key')
+
+
+@pytest.mark.asyncio
+async def test_tls_server_name_override_added_to_options(endpoints: list[str]) -> None:
+    manager = ConnectionManager(endpoints)
+
+    with patch('grpc.aio.secure_channel') as secure_channel_mock:
+        manager.get_channel(ca_cert=b'ca', tls_server_name='etcdtls1')
+
+    call_args = secure_channel_mock.call_args
+    assert call_args is not None
+    options = cast(list[tuple[str, object]], call_args.kwargs['options'])
+    assert ('grpc.ssl_target_name_override', 'etcdtls1') in options
+
+
+@pytest.mark.asyncio
+async def test_tls_server_name_none_not_added_to_options(endpoints: list[str]) -> None:
+    manager = ConnectionManager(endpoints)
+
+    with patch('grpc.aio.secure_channel') as secure_channel_mock:
+        manager.get_channel(ca_cert=b'ca', tls_server_name=None)
+
+    call_args = secure_channel_mock.call_args
+    assert call_args is not None
+    options = cast(list[tuple[str, object]], call_args.kwargs['options'])
+    assert not any(key == 'grpc.ssl_target_name_override' for key, _ in options)

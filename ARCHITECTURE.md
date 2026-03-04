@@ -5,7 +5,7 @@
 ## Modules
 
 - `client.py`: service lifecycle and wiring (`Etcd3Client`); `lock()` / `election()` / `token_refresher()` factory methods
-- `connections.py`: channel creation, TLS, round-robin load balancing, gRPC keepalive
+- `connections.py`: channel creation, TLS/mTLS, round-robin load balancing, gRPC keepalive; `tls_server_name` sets `grpc.ssl_target_name_override` — required for multi-endpoint TLS because the `ipv4:` scheme cannot derive a server name from a comma-separated address list
 - `base.py`: shared retry/backoff helper for unary RPCs; per-call `asyncio.timeout()`; maps `UNAUTHENTICATED` → `EtcdUnauthenticatedError`, `PERMISSION_DENIED` → `EtcdPermissionDeniedError`; `set_token()` injects auth token as gRPC metadata
 - `kv.py`: KV operations (put/get/delete/compact/txn); `SortOrder` / `SortTarget` enums; `prefix_range_end()` utility; `txn_compare_create_revision()` for the "key does not exist" idiom
 - `lease.py`: lease operations (grant/revoke/time_to_live/keep_alive/leases); `LeaseKeepalive` async context manager for background keepalive

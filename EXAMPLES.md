@@ -2,13 +2,24 @@
 
 Step-by-step walkthrough of every script in the [`examples/`](examples/) directory.
 
-All examples require a running etcd cluster. Start a local 3-node cluster with:
+All examples require a running etcd cluster. Start the full local environment (plain + TLS clusters) with:
 
 ```bash
 docker compose -f docker/compose.yaml up -d
 ```
 
-This starts etcd on ports **2379**, **3379**, and **4379**.
+This starts two independent clusters:
+
+| Cluster | Ports | Transport |
+|---|---|---|
+| `etcd1 / etcd2 / etcd3` | 2379, 3379, 4379 | Plain TCP |
+| `etcdtls1 / etcdtls2 / etcdtls3` | 5379, 6379, 7379 | Mutual TLS (mTLS) |
+
+The TLS examples require certificate files in `docker/`. Generate them once with:
+
+```bash
+bash docker/gen-certs.sh
+```
 
 ---
 

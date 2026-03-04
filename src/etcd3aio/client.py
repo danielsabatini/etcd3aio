@@ -37,6 +37,11 @@ class Etcd3Client:
             streams.  Doubles on each failure up to
             *watch_max_reconnect_backoff_seconds*.
         watch_max_reconnect_backoff_seconds: Cap on watch stream reconnect delay.
+        tls_server_name: Override the hostname used for TLS certificate
+            verification.  Required when connecting to multiple TLS endpoints
+            via round-robin (``ipv4:`` scheme) — set it to a DNS name present
+            in the server certificate SAN, e.g. ``'localhost'``.  Ignored when
+            no TLS credentials are provided.
         **conn_args: TLS keyword arguments forwarded to
             :meth:`~ConnectionManager.get_channel` — ``ca_cert``,
             ``cert_key``, ``cert_chain``.
@@ -55,10 +60,12 @@ class Etcd3Client:
         rpc_max_attempts: int = 3,
         watch_reconnect_backoff_seconds: float = 0.25,
         watch_max_reconnect_backoff_seconds: float = 5.0,
+        tls_server_name: str | None = None,
         **conn_args: bytes | None,
     ) -> None:
         self._manager = ConnectionManager(endpoints or ['localhost:2379'])
         self._conn_args = conn_args
+        self._tls_server_name = tls_server_name
         self._token = token
         self._rpc_max_attempts = rpc_max_attempts
         self._watch_reconnect_backoff_seconds = watch_reconnect_backoff_seconds
@@ -78,7 +85,9 @@ class Etcd3Client:
         Called automatically when using the ``async with`` context manager.
         Call explicitly if you prefer manual lifecycle management.
         """
-        self._channel = self._manager.get_channel(**self._conn_args)
+        self._channel = self._manager.get_channel(
+            **self._conn_args, tls_server_name=self._tls_server_name
+        )
         self.auth = AuthService(self._channel, max_attempts=self._rpc_max_attempts)
         self.cluster = ClusterService(self._channel, max_attempts=self._rpc_max_attempts)
         self.kv = KVService(self._channel, max_attempts=self._rpc_max_attempts)

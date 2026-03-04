@@ -59,6 +59,120 @@ services:
     volumes:
       - etcd3-data:/etcd-data
 
+  etcdtls1:
+    image: quay.io/coreos/etcd:v3.6.8
+    container_name: etcdtls1
+    ports:
+      - "5379:2379"
+    environment:
+      - ETCD_NAME=etcdtls1
+
+      - ETCD_INITIAL_CLUSTER_STATE=new 
+      - ETCD_INITIAL_CLUSTER_TOKEN=etcd3aio
+      - ETCD_INITIAL_CLUSTER=etcdtls1=https://etcdtls1:2380,etcdtls2=https://etcdtls2:2380,etcdtls3=https://etcdtls3:2380
+
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=https://etcdtls1:2380
+      - ETCD_LISTEN_PEER_URLS=https://0.0.0.0:2380
+      - ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:2379
+      - ETCD_ADVERTISE_CLIENT_URLS=https://etcdtls1:2379
+
+      - ETCD_PEER_TRUSTED_CA_FILE=/etc/ssl/certs/peer-ca.crt
+      - ETCD_PEER_CERT_FILE=/etc/ssl/certs/peer-cert.crt
+      - ETCD_PEER_KEY_FILE=/etc/ssl/certs/peer-key.key
+
+      - ETCD_TRUSTED_CA_FILE=/etc/ssl/certs/server-ca.crt
+      - ETCD_CERT_FILE=/etc/ssl/certs/server-cert.crt
+      - ETCD_KEY_FILE=/etc/ssl/certs/server-key.key
+      - ETCD_CLIENT_CERT_AUTH=true
+
+      - ETCD_DATA_DIR=/etcd-data
+    networks:
+      - etcd
+    volumes:
+      - etcdtls1-data:/etcd-data
+      - ./peer-ca.crt:/etc/ssl/certs/peer-ca.crt
+      - ./peer-cert.crt:/etc/ssl/certs/peer-cert.crt
+      - ./peer-key.key:/etc/ssl/certs/peer-key.key
+      - ./server-ca.crt:/etc/ssl/certs/server-ca.crt
+      - ./server-cert.crt:/etc/ssl/certs/server-cert.crt
+      - ./server-key.key:/etc/ssl/certs/server-key.key
+
+  etcdtls2:
+    image: quay.io/coreos/etcd:v3.6.8
+    container_name: etcdtls2
+    ports:
+      - "6379:2379"
+    environment:
+      - ETCD_NAME=etcdtls2
+
+      - ETCD_INITIAL_CLUSTER_STATE=new 
+      - ETCD_INITIAL_CLUSTER_TOKEN=etcd3aio
+      - ETCD_INITIAL_CLUSTER=etcdtls1=https://etcdtls1:2380,etcdtls2=https://etcdtls2:2380,etcdtls3=https://etcdtls3:2380
+
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=https://etcdtls2:2380
+      - ETCD_LISTEN_PEER_URLS=https://0.0.0.0:2380
+      - ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:2379
+      - ETCD_ADVERTISE_CLIENT_URLS=https://etcdtls2:2379
+
+      - ETCD_PEER_TRUSTED_CA_FILE=/etc/ssl/certs/peer-ca.crt
+      - ETCD_PEER_CERT_FILE=/etc/ssl/certs/peer-cert.crt
+      - ETCD_PEER_KEY_FILE=/etc/ssl/certs/peer-key.key
+
+      - ETCD_TRUSTED_CA_FILE=/etc/ssl/certs/server-ca.crt
+      - ETCD_CERT_FILE=/etc/ssl/certs/server-cert.crt
+      - ETCD_KEY_FILE=/etc/ssl/certs/server-key.key
+      - ETCD_CLIENT_CERT_AUTH=true
+
+      - ETCD_DATA_DIR=/etcd-data
+    networks:
+      - etcd
+    volumes:
+      - etcdtls2-data:/etcd-data
+      - ./peer-ca.crt:/etc/ssl/certs/peer-ca.crt
+      - ./peer-cert.crt:/etc/ssl/certs/peer-cert.crt
+      - ./peer-key.key:/etc/ssl/certs/peer-key.key
+      - ./server-ca.crt:/etc/ssl/certs/server-ca.crt
+      - ./server-cert.crt:/etc/ssl/certs/server-cert.crt
+      - ./server-key.key:/etc/ssl/certs/server-key.key
+
+  etcdtls3:
+    image: quay.io/coreos/etcd:v3.6.8
+    container_name: etcdtls3
+    ports:
+      - "7379:2379"
+    environment:
+      - ETCD_NAME=etcdtls3
+
+      - ETCD_INITIAL_CLUSTER_STATE=new 
+      - ETCD_INITIAL_CLUSTER_TOKEN=etcd3aio
+      - ETCD_INITIAL_CLUSTER=etcdtls1=https://etcdtls1:2380,etcdtls2=https://etcdtls2:2380,etcdtls3=https://etcdtls3:2380
+
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=https://etcdtls3:2380
+      - ETCD_LISTEN_PEER_URLS=https://0.0.0.0:2380
+      - ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:2379
+      - ETCD_ADVERTISE_CLIENT_URLS=https://etcdtls3:2379
+
+      - ETCD_PEER_TRUSTED_CA_FILE=/etc/ssl/certs/peer-ca.crt
+      - ETCD_PEER_CERT_FILE=/etc/ssl/certs/peer-cert.crt
+      - ETCD_PEER_KEY_FILE=/etc/ssl/certs/peer-key.key
+
+      - ETCD_TRUSTED_CA_FILE=/etc/ssl/certs/server-ca.crt
+      - ETCD_CERT_FILE=/etc/ssl/certs/server-cert.crt
+      - ETCD_KEY_FILE=/etc/ssl/certs/server-key.key
+      - ETCD_CLIENT_CERT_AUTH=true
+
+      - ETCD_DATA_DIR=/etcd-data
+    networks:
+      - etcd
+    volumes:
+      - etcdtls3-data:/etcd-data
+      - ./peer-ca.crt:/etc/ssl/certs/peer-ca.crt
+      - ./peer-cert.crt:/etc/ssl/certs/peer-cert.crt
+      - ./peer-key.key:/etc/ssl/certs/peer-key.key
+      - ./server-ca.crt:/etc/ssl/certs/server-ca.crt
+      - ./server-cert.crt:/etc/ssl/certs/server-cert.crt
+      - ./server-key.key:/etc/ssl/certs/server-key.key
+
 networks:
   etcd:
     driver: bridge
@@ -67,3 +181,6 @@ volumes:
   etcd1-data:
   etcd2-data:
   etcd3-data:
+  etcdtls1-data:
+  etcdtls2-data:
+  etcdtls3-data:

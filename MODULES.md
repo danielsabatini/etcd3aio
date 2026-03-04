@@ -310,25 +310,51 @@ For TLS, supply certificate bytes directly to the client constructor.
 from pathlib import Path
 from etcd3aio import Etcd3Client
 
-# Multi-endpoint (round-robin load balancing)
+# Multi-endpoint (round-robin load balancing, no TLS)
 async with Etcd3Client(
     ['etcd-node1:2379', 'etcd-node2:2379', 'etcd-node3:2379'],
 ) as client:
     await client.ping()
 
-# One-way TLS (server certificate verification)
+# One-way TLS — single endpoint (server certificate verification only)
 async with Etcd3Client(
     ['etcd-node1:2379'],
-    ca_cert=Path('ca.crt').read_bytes(),
+    ca_cert=Path('server-ca.crt').read_bytes(),
 ) as client:
     await client.ping()
 
-# Mutual TLS (mTLS — client presents its own certificate)
+# Mutual TLS (mTLS) — single endpoint
+async with Etcd3Client(
+    ['etcd-node1:2379'],
+    ca_cert=Path('server-ca.crt').read_bytes(),
+    cert_chain=Path('client-cert.crt').read_bytes(),
+    cert_key=Path('client-key.key').read_bytes(),
+) as client:
+    await client.ping()
+
+# Mutual TLS (mTLS) — multiple endpoints
+#
+# The ``ipv4:`` gRPC target scheme used for round-robin load balancing encodes
+# all addresses as a comma-separated list (e.g. ``ipv4:127.0.0.1:5379,...``).
+# gRPC cannot derive a single server name from that list, so TLS hostname
+# verification fails unless you provide ``tls_server_name``.  Set it to a DNS
+# name present in the server certificate's Subject Alternative Names (SANs).
 async with Etcd3Client(
     ['etcd-node1:2379', 'etcd-node2:2379', 'etcd-node3:2379'],
-    ca_cert=Path('ca.crt').read_bytes(),
-    cert_key=Path('client.key').read_bytes(),
-    cert_chain=Path('client.crt').read_bytes(),
+    ca_cert=Path('server-ca.crt').read_bytes(),
+    cert_chain=Path('client-cert.crt').read_bytes(),
+    cert_key=Path('client-key.key').read_bytes(),
+    tls_server_name='etcd-node1',   # must match a DNS SAN in the server cert
 ) as client:
     await client.ping()
 ```
+
+### TLS certificate files
+
+| File | Purpose |
+|---|---|
+| `server-ca.crt` | CA that signed the server certificate; passed as `ca_cert` |
+| `client-cert.crt` | Client certificate presented during the mTLS handshake; passed as `cert_chain` |
+| `client-key.key` | Private key for the client certificate; passed as `cert_key` |
+
+Generate a self-signed set for local testing with `docker/gen-certs.sh`.

@@ -106,7 +106,40 @@ after all retry attempts are exhausted.
 docker compose -f docker/compose.yaml up -d
 ```
 
-This starts a 3-node etcd cluster on ports 2379, 3379, and 4379.
+This starts two independent clusters:
+
+| Cluster | Ports | Transport |
+|---|---|---|
+| `etcd1 / etcd2 / etcd3` | 2379, 3379, 4379 | Plain TCP (no TLS) |
+| `etcdtls1 / etcdtls2 / etcdtls3` | 5379, 6379, 7379 | Mutual TLS (mTLS) |
+
+### Generating TLS certificates
+
+The mTLS cluster requires certificate files in `docker/`. To regenerate them:
+
+```bash
+bash docker/gen-certs.sh
+```
+
+This creates `server-ca.crt`, `client-cert.crt`, `client-key.key`, and peer certificate pairs — all with the correct Subject Alternative Names for the TLS cluster nodes.
+
+### Connecting to the TLS cluster
+
+```python
+from pathlib import Path
+from etcd3aio import Etcd3Client
+
+docker_dir = Path('docker')
+
+async with Etcd3Client(
+    ['localhost:5379', 'localhost:6379', 'localhost:7379'],
+    ca_cert=(docker_dir / 'server-ca.crt').read_bytes(),
+    cert_chain=(docker_dir / 'client-cert.crt').read_bytes(),
+    cert_key=(docker_dir / 'client-key.key').read_bytes(),
+    tls_server_name='localhost',   # required for multi-endpoint TLS — see MODULES.md
+) as client:
+    await client.ping()
+```
 
 ## Documentation
 

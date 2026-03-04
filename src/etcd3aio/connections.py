@@ -48,6 +48,7 @@ class ConnectionManager:
         ca_cert: bytes | None = None,
         cert_key: bytes | None = None,
         cert_chain: bytes | None = None,
+        tls_server_name: str | None = None,
     ) -> grpc.aio.Channel:
         """Create and return a gRPC async channel.
 
@@ -61,6 +62,13 @@ class ConnectionManager:
                 Requires *ca_cert*.
             cert_chain: PEM-encoded client certificate chain bytes for mTLS.
                 Requires *ca_cert*.
+            tls_server_name: Override the server name used for TLS hostname
+                verification.  Required when using multiple endpoints with the
+                ``ipv4:`` target scheme and TLS, because gRPC cannot derive a
+                single hostname from a comma-separated address list.  The value
+                must match a DNS SAN in the server certificate (e.g.
+                ``'localhost'`` or a shared cluster hostname).  Ignored when
+                *ca_cert* is ``None``.
 
         Returns:
             :class:`grpc.aio.Channel` configured with round-robin load
@@ -78,6 +86,9 @@ class ConnectionManager:
                 private_key=cert_key,
                 certificate_chain=cert_chain,
             )
-            return grpc.aio.secure_channel(self.target, credentials, options=self.grpc_options)
+            options = self.grpc_options
+            if tls_server_name is not None:
+                options = [*options, ('grpc.ssl_target_name_override', tls_server_name)]
+            return grpc.aio.secure_channel(self.target, credentials, options=options)
 
         return grpc.aio.insecure_channel(self.target, options=self.grpc_options)
