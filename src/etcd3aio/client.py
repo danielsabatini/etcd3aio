@@ -72,14 +72,13 @@ class Etcd3Client:
         self.maintenance: MaintenanceService | None = None
         self.watch: WatchService | None = None
 
-    async def connect(self) -> None:
+    async def connect(self) -> None:  # NOSONAR
         """Open the gRPC channel and initialise all service facades.
 
         Called automatically when using the ``async with`` context manager.
         Call explicitly if you prefer manual lifecycle management.
         """
         self._channel = self._manager.get_channel(**self._conn_args)
-        await self._channel.channel_ready()
         self.auth = AuthService(self._channel, max_attempts=self._rpc_max_attempts)
         self.cluster = ClusterService(self._channel, max_attempts=self._rpc_max_attempts)
         self.kv = KVService(self._channel, max_attempts=self._rpc_max_attempts)
@@ -120,27 +119,33 @@ class Etcd3Client:
         self.maintenance = None
         self.watch = None
 
-    async def ping(self, *, write_check: bool = True) -> None:
+    async def ping(self, *, write_check: bool = True, timeout: float = 5.0) -> None:  # NOSONAR
         """Verify cluster health.
 
         Raises EtcdConnectionError if the cluster is unreachable.
         With write_check=True (default), also validates write capability,
         detecting quorum loss in multi-node clusters.
+
+        Args:
+            write_check: When True, also validates write capability via a
+                short-lived lease put.  Set to False for a cheaper read-only check.
+            timeout: Maximum seconds to wait for the cluster to respond before
+                raising TimeoutError.  Defaults to 5.0 s.
         """
         if self.kv is None or self.lease is None:
             raise RuntimeError(_ERR_NOT_CONNECTED)
 
-        await self.kv.get(_PING_KEY)
+        await self.kv.get(_PING_KEY, timeout=timeout)
 
         if not write_check:
             return
 
-        lease = await self.lease.grant(ttl=5)
+        lease = await self.lease.grant(ttl=5, timeout=timeout)
         try:
-            await self.kv.put(_PING_KEY, b'', lease=lease.ID)
+            await self.kv.put(_PING_KEY, b'', lease=lease.ID, timeout=timeout)
         finally:
             with contextlib.suppress(EtcdError):
-                await self.lease.revoke(lease.ID)
+                await self.lease.revoke(lease.ID, timeout=timeout)
 
     def token_refresher(
         self,

@@ -15,6 +15,7 @@ async def test_connect_initializes_services() -> None:
     get_channel_mock = MagicMock(return_value=channel)
 
     auth_service = MagicMock()
+    cluster_service = MagicMock()
     kv_service = MagicMock()
     lease_service = MagicMock()
     watch_service = MagicMock()
@@ -23,6 +24,7 @@ async def test_connect_initializes_services() -> None:
     with (
         patch('etcd3aio.client.ConnectionManager.get_channel', new=get_channel_mock),
         patch('etcd3aio.client.AuthService', return_value=auth_service),
+        patch('etcd3aio.client.ClusterService', return_value=cluster_service),
         patch('etcd3aio.client.KVService', return_value=kv_service),
         patch('etcd3aio.client.LeaseService', return_value=lease_service),
         patch('etcd3aio.client.MaintenanceService', return_value=maintenance_service),
@@ -32,6 +34,7 @@ async def test_connect_initializes_services() -> None:
         await client.connect()
 
         assert client.auth is auth_service
+        assert client.cluster is cluster_service
         assert client.kv is kv_service
         assert client.lease is lease_service
         assert client.maintenance is maintenance_service
@@ -41,6 +44,7 @@ async def test_connect_initializes_services() -> None:
 
     channel.close.assert_awaited_once()
     assert client.auth is None
+    assert client.cluster is None
     assert client.kv is None
     assert client.lease is None
     assert client.maintenance is None
@@ -59,6 +63,7 @@ async def test_async_context_manager_lifecycle() -> None:
     with (
         patch('etcd3aio.client.ConnectionManager.get_channel', new=get_channel_mock),
         patch('etcd3aio.client.AuthService', return_value=MagicMock()),
+        patch('etcd3aio.client.ClusterService', return_value=MagicMock()),
         patch('etcd3aio.client.KVService', return_value=kv_service),
         patch('etcd3aio.client.LeaseService', return_value=lease_service),
         patch('etcd3aio.client.MaintenanceService', return_value=MagicMock()),
@@ -86,6 +91,7 @@ async def test_ping_performs_read_and_write_check() -> None:
             'etcd3aio.client.ConnectionManager.get_channel', new=MagicMock(return_value=AsyncMock())
         ),
         patch('etcd3aio.client.AuthService', return_value=MagicMock()),
+        patch('etcd3aio.client.ClusterService', return_value=MagicMock()),
         patch('etcd3aio.client.KVService', return_value=kv),
         patch('etcd3aio.client.LeaseService', return_value=lease),
         patch('etcd3aio.client.MaintenanceService', return_value=MagicMock()),
@@ -95,9 +101,9 @@ async def test_ping_performs_read_and_write_check() -> None:
             await client.ping()
 
     kv.get.assert_awaited_once()
-    lease.grant.assert_awaited_once_with(ttl=5)
+    lease.grant.assert_awaited_once_with(ttl=5, timeout=5.0)
     kv.put.assert_awaited_once()
-    lease.revoke.assert_awaited_once_with(42)
+    lease.revoke.assert_awaited_once_with(42, timeout=5.0)
 
 
 @pytest.mark.asyncio
@@ -112,6 +118,7 @@ async def test_ping_read_only_skips_write() -> None:
             'etcd3aio.client.ConnectionManager.get_channel', new=MagicMock(return_value=AsyncMock())
         ),
         patch('etcd3aio.client.AuthService', return_value=MagicMock()),
+        patch('etcd3aio.client.ClusterService', return_value=MagicMock()),
         patch('etcd3aio.client.KVService', return_value=kv),
         patch('etcd3aio.client.LeaseService', return_value=lease),
         patch('etcd3aio.client.MaintenanceService', return_value=MagicMock()),
@@ -138,6 +145,7 @@ async def test_ping_revoke_suppressed_on_write_failure() -> None:
             'etcd3aio.client.ConnectionManager.get_channel', new=MagicMock(return_value=AsyncMock())
         ),
         patch('etcd3aio.client.AuthService', return_value=MagicMock()),
+        patch('etcd3aio.client.ClusterService', return_value=MagicMock()),
         patch('etcd3aio.client.KVService', return_value=kv),
         patch('etcd3aio.client.LeaseService', return_value=lease),
         patch('etcd3aio.client.MaintenanceService', return_value=MagicMock()),
@@ -147,7 +155,7 @@ async def test_ping_revoke_suppressed_on_write_failure() -> None:
             with pytest.raises(EtcdConnectionError):
                 await client.ping()
 
-    lease.revoke.assert_awaited_once_with(42)
+    lease.revoke.assert_awaited_once_with(42, timeout=5.0)
 
 
 @pytest.mark.asyncio
@@ -176,6 +184,7 @@ async def test_token_param_applies_to_all_services_on_connect() -> None:
             'etcd3aio.client.ConnectionManager.get_channel', new=MagicMock(return_value=AsyncMock())
         ),
         patch('etcd3aio.client.AuthService', return_value=auth_service),
+        patch('etcd3aio.client.ClusterService', return_value=MagicMock()),
         patch('etcd3aio.client.KVService', return_value=kv_service),
         patch('etcd3aio.client.LeaseService', return_value=lease_service),
         patch('etcd3aio.client.MaintenanceService', return_value=maintenance_service),
@@ -202,6 +211,7 @@ async def test_set_token_propagates_to_all_active_services() -> None:
             'etcd3aio.client.ConnectionManager.get_channel', new=MagicMock(return_value=AsyncMock())
         ),
         patch('etcd3aio.client.AuthService', return_value=auth_service),
+        patch('etcd3aio.client.ClusterService', return_value=MagicMock()),
         patch('etcd3aio.client.KVService', return_value=kv_service),
         patch('etcd3aio.client.LeaseService', return_value=lease_service),
         patch('etcd3aio.client.MaintenanceService', return_value=maintenance_service),
@@ -227,6 +237,7 @@ async def test_token_refresher_factory_returns_refresher() -> None:
             'etcd3aio.client.ConnectionManager.get_channel', new=MagicMock(return_value=AsyncMock())
         ),
         patch('etcd3aio.client.AuthService', return_value=MagicMock()),
+        patch('etcd3aio.client.ClusterService', return_value=MagicMock()),
         patch('etcd3aio.client.KVService', return_value=MagicMock()),
         patch('etcd3aio.client.LeaseService', return_value=MagicMock()),
         patch('etcd3aio.client.MaintenanceService', return_value=MagicMock()),

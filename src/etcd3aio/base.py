@@ -92,14 +92,15 @@ class BaseService:
             call: The gRPC stub method to invoke.
             request: Protobuf request object.
             operation: Human-readable label used in error messages (e.g. ``'KV.Put'``).
-            timeout: Total deadline for all attempts combined (``None`` = no deadline).
+            timeout: Per-attempt gRPC deadline in seconds (``None`` = no deadline).
+                The ``asyncio.timeout`` wrapper also bounds the total retry loop.
         """
         async with asyncio.timeout(timeout):
             backoff_seconds = self._initial_backoff_seconds
 
             for attempt in range(1, self._max_attempts + 1):
                 try:
-                    return await call(request, metadata=self._metadata or None)  # type: ignore[call-arg]
+                    return await call(request, metadata=self._metadata or None, timeout=timeout)  # type: ignore[call-arg]
                 except grpc.aio.AioRpcError as exc:
                     is_last_attempt = attempt == self._max_attempts
                     if not self._is_transient_error(exc) or is_last_attempt:

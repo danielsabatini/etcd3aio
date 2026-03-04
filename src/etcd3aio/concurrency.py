@@ -115,6 +115,18 @@ class Lock(_Semaphore):
         prefix = f'{_LOCK_PREFIX}/{name}/'.encode()
         super().__init__(kv, lease, watch, prefix, b'', ttl)
 
+    async def acquire(self) -> None:
+        """Acquire the lock without a context manager.
+
+        Must be paired with :meth:`release` in a ``try/finally`` block.
+        Prefer the ``async with`` form when possible.
+        """
+        await self._acquire()
+
+    async def release(self) -> None:
+        """Release the lock acquired via :meth:`acquire`."""
+        await self._release()
+
     async def __aenter__(self) -> Lock:
         await self._acquire()
         return self

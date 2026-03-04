@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.2.0] - 2026-03-04
+
 ### Added
 
 **Auth service** — full Auth API coverage
@@ -33,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `cluster.member_remove()` — remove a member from the cluster
 - `cluster.member_update()` — update the peer URLs of an existing member
 - `cluster.member_promote()` — promote a raft learner to a voting member
+
+**Lock API** — manual lifecycle support
+- `Lock.acquire()` / `Lock.release()` — acquire and release without a context manager
 
 ---
 
@@ -79,4 +86,6 @@ Initial release of **etcd3aio** — async Python client for etcd v3 using `grpc.
 - Error hierarchy: `EtcdError`, `EtcdConnectionError`, `EtcdTransientError`, `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError`
 - Full PEP 561 typing support (`py.typed` marker)
 
+[Unreleased]: https://github.com/danielsabatini/etcd3aio/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/danielsabatini/etcd3aio/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/danielsabatini/etcd3aio/releases/tag/v0.1.0
