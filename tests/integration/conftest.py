@@ -20,6 +20,8 @@ the plain-TCP ``etcd`` fixture is never pulled in when running TLS tests.
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+
 import pytest
 import pytest_asyncio
 
@@ -40,7 +42,7 @@ TEST_PREFIX = 'test/'
 
 
 @pytest_asyncio.fixture(scope='session')
-async def etcd() -> Etcd3Client:  # type: ignore[return]
+async def etcd() -> AsyncGenerator[Etcd3Client, None]:
     """Yield a connected Etcd3Client; skip the entire session if etcd is down."""
     async with Etcd3Client([ETCD_ENDPOINT]) as client:
         try:
@@ -56,7 +58,7 @@ async def etcd() -> Etcd3Client:  # type: ignore[return]
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def cleanup(etcd: Etcd3Client) -> None:  # type: ignore[return]
+async def cleanup(etcd: Etcd3Client) -> AsyncGenerator[None, None]:
     """Delete all test/* keys after each test to guarantee isolation.
 
     Shadowed by ``tests/integration/tls/conftest.py::cleanup`` for TLS tests.

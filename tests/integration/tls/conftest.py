@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import asyncio
 import subprocess
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import pytest
@@ -134,7 +135,7 @@ def tls_cluster(tls_certs: None) -> None:  # type: ignore[return]
 
 
 @pytest_asyncio.fixture(scope='session')
-async def etcd_tls(tls_cluster: None) -> Etcd3Client:  # type: ignore[return]
+async def etcd_tls(tls_cluster: None) -> AsyncGenerator[Etcd3Client, None]:
     """Yield a session-scoped mTLS Etcd3Client.
 
     Waits up to ``_CLUSTER_WAIT_SECONDS`` seconds for the TLS cluster to
@@ -173,7 +174,7 @@ async def etcd_tls(tls_cluster: None) -> Etcd3Client:  # type: ignore[return]
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def cleanup(etcd_tls: Etcd3Client) -> None:  # type: ignore[return]
+async def cleanup(etcd_tls: Etcd3Client) -> AsyncGenerator[None, None]:
     """Delete all ``test/*`` keys after each TLS test.
 
     This fixture intentionally shadows the parent ``cleanup`` in

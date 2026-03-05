@@ -41,14 +41,11 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-data]
-etcd3aio = ["py.typed"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/etcd3aio"]
 
 [tool.ruff]
 target-version = "py311"
@@ -77,6 +74,7 @@ venvPath = "."
 venv = ".venv"
 reportMissingImports = "none"
 reportMissingModuleSource = "none"
+reportOptionalMemberAccess = "none"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit", "tests/integration"]
