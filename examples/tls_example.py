@@ -13,6 +13,7 @@ Use a custom certificate directory:
 
     uv run python examples/tls_example.py --certs-dir /path/to/certs
 """
+
 from __future__ import annotations
 
 import argparse
@@ -32,7 +33,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--certs-dir',
         default='docker',
-        help='Directory containing server-ca.crt, client-cert.crt, client-key.key (default: docker/)',
+        help='Directory with server-ca.crt, client-cert.crt, client-key.key (default: docker/)',
     )
     parser.add_argument(
         '--endpoints',

@@ -22,7 +22,9 @@ from etcd3aio.maintenance import AlarmType, DowngradeAction, MaintenanceService
 
 
 class FakeRpcError(grpc.aio.AioRpcError):
-    def __init__(self, status_code: grpc.StatusCode = grpc.StatusCode.UNAVAILABLE, detail: str = '') -> None:
+    def __init__(
+        self, status_code: grpc.StatusCode = grpc.StatusCode.UNAVAILABLE, detail: str = ''
+    ) -> None:
         self._status_code = status_code
         self._detail = detail
 
@@ -272,7 +274,9 @@ async def test_snapshot_retries_on_transient_error_before_yield() -> None:
 async def test_snapshot_surfaces_error_immediately_after_yielding_bytes() -> None:
     """UNAVAILABLE after bytes have been yielded → error surfaced immediately, no retry."""
 
-    async def _partial_then_fail(*args: object, **kwargs: object) -> AsyncGenerator[SnapshotResponse, None]:
+    async def _partial_then_fail(
+        *args: object, **kwargs: object
+    ) -> AsyncGenerator[SnapshotResponse, None]:
         yield SnapshotResponse(blob=b'partial')
         raise FakeRpcError(grpc.StatusCode.UNAVAILABLE)
 
@@ -308,7 +312,9 @@ async def test_snapshot_raises_connection_error_after_max_attempts() -> None:
         patch('etcd3aio.maintenance.asyncio.sleep', new=AsyncMock()),
     ):
         service = MaintenanceService(channel=MagicMock(), max_attempts=2)
-        with pytest.raises(EtcdConnectionError, match='Maintenance.Snapshot failed after 2 attempts'):
+        with pytest.raises(
+            EtcdConnectionError, match='Maintenance.Snapshot failed after 2 attempts'
+        ):
             async for _ in service.snapshot():
                 pass
 

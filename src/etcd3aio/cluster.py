@@ -26,7 +26,11 @@ class ClusterService(BaseService):
         self._stub = ClusterStub(channel)
 
     async def member_list(
-        self, *, linearizable: bool = True, timeout: float | None = None, max_attempts: int | None = None
+        self,
+        *,
+        linearizable: bool = True,
+        timeout: float | None = None,
+        max_attempts: int | None = None,
     ) -> MemberListResponse:
         """List all members in the cluster.
 
@@ -36,7 +40,7 @@ class ClusterService(BaseService):
                 Set to ``False`` for a serializable (potentially stale) read that
                 avoids a quorum round-trip.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Key response field: ``members`` — list of ``Member`` objects, each with
         ``ID``, ``name``, ``peerURLs``, ``clientURLs`` and ``isLearner``.
@@ -66,7 +70,7 @@ class ClusterService(BaseService):
                 (non-voting).  A learner must be promoted via
                 :meth:`member_promote` before it participates in consensus.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Key response fields: ``member`` (the added ``Member``), ``members``
         (full updated member list).
@@ -88,7 +92,7 @@ class ClusterService(BaseService):
             member_id: The ``ID`` field of the ``Member`` to remove (obtained
                 from :meth:`member_list`).
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Key response field: ``members`` — updated full member list after removal.
         """
@@ -114,7 +118,7 @@ class ClusterService(BaseService):
             member_id: The ``ID`` of the member to update.
             peer_urls: New list of peer URL strings.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Key response field: ``members`` — updated full member list.
         """
@@ -134,7 +138,7 @@ class ClusterService(BaseService):
         Args:
             member_id: The ``ID`` of the learner member to promote.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         The member must have been added with ``is_learner=True`` via
         :meth:`member_add` and must be up to date with the leader log before

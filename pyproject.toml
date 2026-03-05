@@ -58,10 +58,11 @@ exclude = ["build", "dist", "__pycache__", "*.egg-info", ".venv", "src/etcd3aio/
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "PL", "PT"]
+ignore = ["PLR0913"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/unit/*.py" = ["PLR2004"]
-"tests/integration/*.py" = ["PLR2004"]
+"tests/unit/*.py" = ["PLR2004", "PT012"]
+"tests/integration/*.py" = ["PLR2004", "PT011"]
 
 [tool.ruff.format]
 quote-style = "single"

@@ -90,12 +90,14 @@ class AuthService(BaseService):
     # Authentication
     # ------------------------------------------------------------------
 
-    async def auth_status(self, *, timeout: float | None = None, max_attempts: int | None = None) -> AuthStatusResponse:
+    async def auth_status(
+        self, *, timeout: float | None = None, max_attempts: int | None = None
+    ) -> AuthStatusResponse:
         """Return the current authentication status of the cluster.
 
         Args:
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         The response includes:
         - ``enabled``: whether auth is currently enabled.
@@ -110,7 +112,12 @@ class AuthService(BaseService):
         )
 
     async def authenticate(
-        self, name: str, password: str, *, timeout: float | None = None, max_attempts: int | None = None
+        self,
+        name: str,
+        password: str,
+        *,
+        timeout: float | None = None,
+        max_attempts: int | None = None,
     ) -> AuthenticateResponse:
         """Obtain a token for the given credentials.
 
@@ -121,7 +128,7 @@ class AuthService(BaseService):
             name: Username.
             password: Plaintext password.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Raises:
             EtcdUnauthenticatedError: credentials are invalid or auth is not enabled.
@@ -134,7 +141,9 @@ class AuthService(BaseService):
             max_attempts=max_attempts,
         )
 
-    async def auth_enable(self, *, timeout: float | None = None, max_attempts: int | None = None) -> AuthEnableResponse:
+    async def auth_enable(
+        self, *, timeout: float | None = None, max_attempts: int | None = None
+    ) -> AuthEnableResponse:
         """Enable authentication on the cluster.
 
         Once enabled, all RPCs require a valid token obtained via
@@ -142,7 +151,7 @@ class AuthService(BaseService):
 
         Args:
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         return await self._rpc(
             self._stub.AuthEnable,
@@ -152,12 +161,14 @@ class AuthService(BaseService):
             max_attempts=max_attempts,
         )
 
-    async def auth_disable(self, *, timeout: float | None = None, max_attempts: int | None = None) -> AuthDisableResponse:
+    async def auth_disable(
+        self, *, timeout: float | None = None, max_attempts: int | None = None
+    ) -> AuthDisableResponse:
         """Disable authentication on the cluster.
 
         Args:
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         return await self._rpc(
             self._stub.AuthDisable,
@@ -189,7 +200,7 @@ class AuthService(BaseService):
             no_password: Create a user that authenticates without a password
                 (e.g. for certificate-based auth).
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         options = UserAddOptions(no_password=no_password)
         return await self._rpc(
@@ -200,13 +211,15 @@ class AuthService(BaseService):
             max_attempts=max_attempts,
         )
 
-    async def user_get(self, name: str, *, timeout: float | None = None, max_attempts: int | None = None) -> AuthUserGetResponse:
+    async def user_get(
+        self, name: str, *, timeout: float | None = None, max_attempts: int | None = None
+    ) -> AuthUserGetResponse:
         """Return the roles assigned to *name*.
 
         Args:
             name: Username to look up.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Response field ``roles`` is a list of role name strings.
         """
@@ -218,12 +231,14 @@ class AuthService(BaseService):
             max_attempts=max_attempts,
         )
 
-    async def user_list(self, *, timeout: float | None = None, max_attempts: int | None = None) -> AuthUserListResponse:
+    async def user_list(
+        self, *, timeout: float | None = None, max_attempts: int | None = None
+    ) -> AuthUserListResponse:
         """Return all users in the cluster.
 
         Args:
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Response field ``users`` is a list of username strings.
         """
@@ -243,7 +258,7 @@ class AuthService(BaseService):
         Args:
             name: Username to delete.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         return await self._rpc(
             self._stub.UserDelete,
@@ -254,7 +269,12 @@ class AuthService(BaseService):
         )
 
     async def user_change_password(
-        self, name: str, password: str, *, timeout: float | None = None, max_attempts: int | None = None
+        self,
+        name: str,
+        password: str,
+        *,
+        timeout: float | None = None,
+        max_attempts: int | None = None,
     ) -> AuthUserChangePasswordResponse:
         """Change the password for *name*.
 
@@ -262,7 +282,7 @@ class AuthService(BaseService):
             name: Username whose password to change.
             password: New plaintext password.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         return await self._rpc(
             self._stub.UserChangePassword,
@@ -281,7 +301,7 @@ class AuthService(BaseService):
             user: Username to grant the role to.
             role: Role name to grant.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         return await self._rpc(
             self._stub.UserGrantRole,
@@ -300,7 +320,7 @@ class AuthService(BaseService):
             name: Username from which to revoke the role.
             role: Role name to revoke.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         return await self._rpc(
             self._stub.UserRevokeRole,
@@ -314,13 +334,15 @@ class AuthService(BaseService):
     # Role management
     # ------------------------------------------------------------------
 
-    async def role_add(self, name: str, *, timeout: float | None = None, max_attempts: int | None = None) -> AuthRoleAddResponse:
+    async def role_add(
+        self, name: str, *, timeout: float | None = None, max_attempts: int | None = None
+    ) -> AuthRoleAddResponse:
         """Create a new role identified by *name*.
 
         Args:
             name: Name of the role to create.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         return await self._rpc(
             self._stub.RoleAdd,
@@ -330,13 +352,15 @@ class AuthService(BaseService):
             max_attempts=max_attempts,
         )
 
-    async def role_get(self, role: str, *, timeout: float | None = None, max_attempts: int | None = None) -> AuthRoleGetResponse:
+    async def role_get(
+        self, role: str, *, timeout: float | None = None, max_attempts: int | None = None
+    ) -> AuthRoleGetResponse:
         """Return the permissions associated with *role*.
 
         Args:
             role: Role name to look up.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Response field ``perm`` is a list of ``Permission`` objects, each with
         ``permType``, ``key`` and ``range_end``.
@@ -349,12 +373,14 @@ class AuthService(BaseService):
             max_attempts=max_attempts,
         )
 
-    async def role_list(self, *, timeout: float | None = None, max_attempts: int | None = None) -> AuthRoleListResponse:
+    async def role_list(
+        self, *, timeout: float | None = None, max_attempts: int | None = None
+    ) -> AuthRoleListResponse:
         """Return all roles in the cluster.
 
         Args:
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Response field ``roles`` is a list of role name strings.
         """
@@ -374,7 +400,7 @@ class AuthService(BaseService):
         Args:
             role: Role name to delete.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         return await self._rpc(
             self._stub.RoleDelete,
@@ -405,7 +431,7 @@ class AuthService(BaseService):
             perm_type: :class:`PermissionType` — ``READ``, ``WRITE`` or
                 ``READWRITE``.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         perm = Permission(
             permType=int(perm_type),
@@ -437,7 +463,7 @@ class AuthService(BaseService):
             range_end: Exclusive upper bound for the range.  ``None`` means
                 single-key.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         return await self._rpc(
             self._stub.RoleRevokePermission,

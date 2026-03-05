@@ -52,12 +52,14 @@ class MaintenanceService(BaseService):
         super().__init__(max_attempts=max_attempts)
         self._stub = MaintenanceStub(channel)
 
-    async def status(self, *, timeout: float | None = None, max_attempts: int | None = None) -> StatusResponse:
+    async def status(
+        self, *, timeout: float | None = None, max_attempts: int | None = None
+    ) -> StatusResponse:
         """Return the status of the cluster member this client is connected to.
 
         Args:
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Key fields:
         - ``leader``: member ID of the current leader (0 = no leader / no quorum).
@@ -67,15 +69,21 @@ class MaintenanceService(BaseService):
         - ``version``: etcd server version string.
         """
         return await self._rpc(
-            self._stub.Status, StatusRequest(), operation='Maintenance.Status', timeout=timeout, max_attempts=max_attempts
+            self._stub.Status,
+            StatusRequest(),
+            operation='Maintenance.Status',
+            timeout=timeout,
+            max_attempts=max_attempts,
         )
 
-    async def alarms(self, *, timeout: float | None = None, max_attempts: int | None = None) -> AlarmResponse:
+    async def alarms(
+        self, *, timeout: float | None = None, max_attempts: int | None = None
+    ) -> AlarmResponse:
         """List all active alarms in the cluster.
 
         Args:
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Returns an :class:`AlarmResponse` whose ``alarms`` field is a list of
         :class:`AlarmMember` objects, each with ``memberID`` and ``alarm``
@@ -87,7 +95,11 @@ class MaintenanceService(BaseService):
             alarm=0,
         )
         return await self._rpc(
-            self._stub.Alarm, request, operation='Maintenance.Alarm', timeout=timeout, max_attempts=max_attempts
+            self._stub.Alarm,
+            request,
+            operation='Maintenance.Alarm',
+            timeout=timeout,
+            max_attempts=max_attempts,
         )
 
     async def alarm_deactivate(
@@ -106,7 +118,7 @@ class MaintenanceService(BaseService):
             member_id: Target member ID. ``0`` (default) broadcasts to all
                 members.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         request = AlarmRequest(
             action=AlarmRequest.DEACTIVATE,
@@ -114,10 +126,16 @@ class MaintenanceService(BaseService):
             alarm=int(alarm_type),
         )
         return await self._rpc(
-            self._stub.Alarm, request, operation='Maintenance.Alarm', timeout=timeout, max_attempts=max_attempts
+            self._stub.Alarm,
+            request,
+            operation='Maintenance.Alarm',
+            timeout=timeout,
+            max_attempts=max_attempts,
         )
 
-    async def defragment(self, *, timeout: float | None = None, max_attempts: int | None = None) -> DefragmentResponse:
+    async def defragment(
+        self, *, timeout: float | None = None, max_attempts: int | None = None
+    ) -> DefragmentResponse:
         """Defragment the backend database of the member this client is connected to.
 
         Reclaims disk space that was freed by previous compactions.  The call
@@ -127,7 +145,7 @@ class MaintenanceService(BaseService):
 
         Args:
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         return await self._rpc(
             self._stub.Defragment,
@@ -137,7 +155,9 @@ class MaintenanceService(BaseService):
             max_attempts=max_attempts,
         )
 
-    async def hash_kv(self, revision: int = 0, *, timeout: float | None = None, max_attempts: int | None = None) -> HashKVResponse:
+    async def hash_kv(
+        self, revision: int = 0, *, timeout: float | None = None, max_attempts: int | None = None
+    ) -> HashKVResponse:
         """Compute a hash of MVCC keys up to the given *revision*.
 
         Useful for consistency checks between cluster members.
@@ -145,7 +165,7 @@ class MaintenanceService(BaseService):
         Args:
             revision: Compute the hash up to this revision (0 = latest).
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Key response fields:
         - ``hash``: 32-bit hash of the key-value store up to *revision*.
@@ -171,7 +191,7 @@ class MaintenanceService(BaseService):
         Args:
             target_id: Member ID of the peer to promote as the new leader.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         return await self._rpc(
             self._stub.MoveLeader,
@@ -230,7 +250,9 @@ class MaintenanceService(BaseService):
             await asyncio.sleep(backoff_seconds)
             backoff_seconds = min(backoff_seconds * 2, self._max_backoff_seconds)
 
-    async def hash(self, *, timeout: float | None = None, max_attempts: int | None = None) -> HashResponse:
+    async def hash(
+        self, *, timeout: float | None = None, max_attempts: int | None = None
+    ) -> HashResponse:
         """Compute a full-store hash of the entire backend database.
 
         Unlike :meth:`hash_kv`, this hashes the complete on-disk store without
@@ -239,7 +261,7 @@ class MaintenanceService(BaseService):
 
         Args:
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Key response field: ``hash`` (uint32).
         """
@@ -266,7 +288,7 @@ class MaintenanceService(BaseService):
                 ``CANCEL``.
             version: Target version string (e.g. ``"3.5.0"``).
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Key response field: ``version`` — the version being downgraded to.
 

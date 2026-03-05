@@ -91,7 +91,7 @@ class KVService(BaseService):
             lease: Lease ID to attach to the key (0 = no lease).
             prev_kv: If ``True``, return the previous key-value in the response.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Returns:
             ``PutResponse`` — ``prev_kv`` is populated only when *prev_kv* is ``True``.
@@ -102,7 +102,9 @@ class KVService(BaseService):
             lease=lease,
             prev_kv=prev_kv,
         )
-        return await self._rpc(self._stub.Put, request, operation='KV.Put', timeout=timeout, max_attempts=max_attempts)
+        return await self._rpc(
+            self._stub.Put, request, operation='KV.Put', timeout=timeout, max_attempts=max_attempts
+        )
 
     async def get(  # noqa: PLR0913
         self,
@@ -134,7 +136,7 @@ class KVService(BaseService):
             keys_only: Return only keys; omit values (efficient for discovery).
             count_only: Return only the key count; omit keys and values.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         request = RangeRequest(
             key=self._to_bytes(key),
@@ -147,7 +149,13 @@ class KVService(BaseService):
             keys_only=keys_only,
             count_only=count_only,
         )
-        return await self._rpc(self._stub.Range, request, operation='KV.Range', timeout=timeout, max_attempts=max_attempts)
+        return await self._rpc(
+            self._stub.Range,
+            request,
+            operation='KV.Range',
+            timeout=timeout,
+            max_attempts=max_attempts,
+        )
 
     async def delete(
         self,
@@ -166,7 +174,7 @@ class KVService(BaseService):
                 of :func:`prefix_range_end` to delete all keys under a prefix.
             prev_kv: If ``True``, include the deleted key-value pairs in the response.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Returns:
             ``DeleteRangeResponse`` — ``deleted`` is the number of keys removed;
@@ -178,7 +186,11 @@ class KVService(BaseService):
             prev_kv=prev_kv,
         )
         return await self._rpc(
-            self._stub.DeleteRange, request, operation='KV.DeleteRange', timeout=timeout, max_attempts=max_attempts
+            self._stub.DeleteRange,
+            request,
+            operation='KV.DeleteRange',
+            timeout=timeout,
+            max_attempts=max_attempts,
         )
 
     async def compact(
@@ -202,10 +214,16 @@ class KVService(BaseService):
             physical: If ``True``, block until the compaction is physically
                 applied to the backend.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
         """
         request = CompactionRequest(revision=revision, physical=physical)
-        return await self._rpc(self._stub.Compact, request, operation='KV.Compact', timeout=timeout, max_attempts=max_attempts)
+        return await self._rpc(
+            self._stub.Compact,
+            request,
+            operation='KV.Compact',
+            timeout=timeout,
+            max_attempts=max_attempts,
+        )
 
     async def txn(
         self,
@@ -228,7 +246,7 @@ class KVService(BaseService):
             success: Operations executed when every predicate evaluates to ``True``.
             failure: Operations executed when any predicate evaluates to ``False``.
             timeout: Per-call deadline in seconds (``None`` = no deadline).
-            max_attempts: Override the service-level retry limit for this call only (``None`` uses the service default).
+            max_attempts: Override the retry limit for this call (``None`` = service default).
 
         Returns:
             ``TxnResponse`` — ``succeeded`` is ``True`` if the success branch ran;
@@ -239,7 +257,9 @@ class KVService(BaseService):
             success=list(success),
             failure=list(failure),
         )
-        return await self._rpc(self._stub.Txn, request, operation='KV.Txn', timeout=timeout, max_attempts=max_attempts)
+        return await self._rpc(
+            self._stub.Txn, request, operation='KV.Txn', timeout=timeout, max_attempts=max_attempts
+        )
 
     @classmethod
     def txn_compare_value(
