@@ -96,7 +96,7 @@ temp_proto/
 # dicas.txt
 
 # =========================
-# AI Agents / internal docs (uncomment when ready to stop tracking)
+# AI Agents 
 # =========================
 .claude
 CLAUDE.md
