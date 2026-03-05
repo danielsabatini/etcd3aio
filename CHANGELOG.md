@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.3.0] - 2026-03-05
 
 ### Added
 
@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ConnectionManager.get_channel(tls_server_name=...)` — low-level counterpart; injects the override only when `ca_cert` is also provided
 - `docker/gen-certs.sh` — script to regenerate peer CA, server CA, and client certificates with correct Subject Alternative Names for the TLS test cluster (`etcdtls1`, `etcdtls2`, `etcdtls3`, `localhost`, `127.0.0.1`)
 - `tests/integration/tls/` — dedicated TLS integration test suite with self-contained fixture chain (`tls_certs` → `tls_cluster` → `etcd_tls`); auto-starts Docker cluster and generates certificates when missing; auto-skipped when Docker is unavailable: `test_tls_ping`, `test_tls_put_and_get`, `test_tls_member_list`, `test_tls_no_plaintext_access`
+
+### Changed
+
+- `maintenance.snapshot()` — now retries the entire stream on transient errors (`UNAVAILABLE`, `DEADLINE_EXCEEDED`) **before** the first byte is delivered; once data starts flowing, errors are surfaced immediately without retry to prevent duplicate data (callers should discard any partial snapshot and restart)
+- `BaseService` — extracted `_raise_rpc_exception()` static method to centralise gRPC → library error mapping; reduces cognitive complexity of `_rpc()` and makes the same mapping available to streaming methods such as `snapshot()`
 
 ---
 
@@ -94,6 +99,6 @@ Initial release of **etcd3aio** — async Python client for etcd v3 using `grpc.
 - Error hierarchy: `EtcdError`, `EtcdConnectionError`, `EtcdTransientError`, `EtcdUnauthenticatedError`, `EtcdPermissionDeniedError`
 - Full PEP 561 typing support (`py.typed` marker)
 
-[Unreleased]: https://github.com/danielsabatini/etcd3aio/compare/v0.2.0...HEAD
+[0.3.0]: https://github.com/danielsabatini/etcd3aio/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/danielsabatini/etcd3aio/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/danielsabatini/etcd3aio/releases/tag/v0.1.0

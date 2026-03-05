@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import grpc
 import pytest
 
 from etcd3aio._protobuf import (
@@ -16,7 +17,20 @@ from etcd3aio._protobuf import (
     SnapshotResponse,
     StatusResponse,
 )
+from etcd3aio.errors import EtcdConnectionError
 from etcd3aio.maintenance import AlarmType, DowngradeAction, MaintenanceService
+
+
+class FakeRpcError(grpc.aio.AioRpcError):
+    def __init__(self, status_code: grpc.StatusCode = grpc.StatusCode.UNAVAILABLE, detail: str = '') -> None:
+        self._status_code = status_code
+        self._detail = detail
+
+    def code(self) -> grpc.StatusCode:
+        return self._status_code
+
+    def details(self) -> str:
+        return self._detail
 
 
 @pytest.mark.asyncio
@@ -220,6 +234,83 @@ async def test_snapshot_empty_stream_yields_nothing() -> None:
             received.append(chunk)
 
     assert received == []
+
+
+@pytest.mark.asyncio
+async def test_snapshot_retries_on_transient_error_before_yield() -> None:
+    """UNAVAILABLE before any bytes are yielded → retry transparently."""
+    chunks = [b'chunk-one', b'chunk-two']
+    calls: list[int] = []
+
+    async def _good_gen() -> AsyncGenerator[SnapshotResponse, None]:
+        for data in chunks:
+            yield SnapshotResponse(blob=data)
+
+    def _fake_snapshot(*args: object, **kwargs: object) -> object:
+        calls.append(1)
+        if len(calls) == 1:
+            raise FakeRpcError(grpc.StatusCode.UNAVAILABLE)
+        return _good_gen()
+
+    stub = MagicMock()
+    stub.Snapshot = _fake_snapshot
+
+    with (
+        patch('etcd3aio.maintenance.MaintenanceStub', return_value=stub),
+        patch('etcd3aio.maintenance.asyncio.sleep', new=AsyncMock()),
+    ):
+        service = MaintenanceService(channel=MagicMock(), max_attempts=2)
+        received: list[bytes] = []
+        async for chunk in service.snapshot():
+            received.append(chunk)
+
+    assert received == chunks
+    assert len(calls) == 2
+
+
+@pytest.mark.asyncio
+async def test_snapshot_surfaces_error_immediately_after_yielding_bytes() -> None:
+    """UNAVAILABLE after bytes have been yielded → error surfaced immediately, no retry."""
+
+    async def _partial_then_fail(*args: object, **kwargs: object) -> AsyncGenerator[SnapshotResponse, None]:
+        yield SnapshotResponse(blob=b'partial')
+        raise FakeRpcError(grpc.StatusCode.UNAVAILABLE)
+
+    stub = MagicMock()
+    stub.Snapshot = _partial_then_fail
+
+    with (
+        patch('etcd3aio.maintenance.MaintenanceStub', return_value=stub),
+        patch('etcd3aio.maintenance.asyncio.sleep', new=AsyncMock()) as sleep_mock,
+    ):
+        service = MaintenanceService(channel=MagicMock(), max_attempts=3)
+        received: list[bytes] = []
+        with pytest.raises(EtcdConnectionError):
+            async for chunk in service.snapshot():
+                received.append(chunk)
+
+    assert received == [b'partial']
+    sleep_mock.assert_not_awaited()  # no retry was attempted
+
+
+@pytest.mark.asyncio
+async def test_snapshot_raises_connection_error_after_max_attempts() -> None:
+    """UNAVAILABLE on every attempt (no bytes) → EtcdConnectionError after exhaustion."""
+
+    def _always_fail(*args: object, **kwargs: object) -> object:
+        raise FakeRpcError(grpc.StatusCode.UNAVAILABLE)
+
+    stub = MagicMock()
+    stub.Snapshot = _always_fail
+
+    with (
+        patch('etcd3aio.maintenance.MaintenanceStub', return_value=stub),
+        patch('etcd3aio.maintenance.asyncio.sleep', new=AsyncMock()),
+    ):
+        service = MaintenanceService(channel=MagicMock(), max_attempts=2)
+        with pytest.raises(EtcdConnectionError, match='Maintenance.Snapshot failed after 2 attempts'):
+            async for _ in service.snapshot():
+                pass
 
 
 # ---------------------------------------------------------------------------

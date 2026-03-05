@@ -285,6 +285,9 @@ chunks: list[bytes] = []
 async for chunk in client.maintenance.snapshot():
     chunks.append(chunk)
 data = b''.join(chunks)
+# snapshot() retries on transient errors before the first byte is delivered.
+# Once data starts flowing, errors are surfaced immediately — discard any
+# partial data and restart the call.
 ```
 
 | `AlarmType` | Meaning |
